@@ -1,0 +1,1623 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { PRODUCTS, CATEGORIES } from '../data/products';
+
+const serializedProducts = JSON.stringify(PRODUCTS);
+const serializedCategories = JSON.stringify(CATEGORIES);
+---
+
+<Layout title="COLECCIÓN // Lookbook de Compras">
+  <div class="lookbook-app">
+    <!-- CABECERA EDITORIAL MINIMALISTA (Estilo New Balance Lookbook / SSENSE) -->
+    <header class="editorial-header">
+      <div class="header-meta-row">
+        <span class="meta-index" id="header-status-tag">POR COMPRAR // 01</span>
+        <span class="meta-budget" id="budget-summary">0 PENDIENTES</span>
+      </div>
+
+      <div class="header-title-row">
+        <h1 class="editorial-title" id="editorial-heading">ZAPATOS</h1>
+        <button
+          type="button"
+          id="top-search-trigger"
+          class="minimal-icon-btn"
+          aria-label="Buscar en la colección"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7.5"></circle>
+            <line x1="20" y1="20" x2="16.2" y2="16.2"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- BUSCADOR DESPLEGABLE LIMPIO (Solo ocupa espacio cuando lo usas) -->
+      <div id="search-drawer" class="search-drawer" hidden>
+        <div class="search-line">
+          <input
+            type="search"
+            id="search-input"
+            class="editorial-search-input"
+            placeholder="Filtrar por nombre, color, talla, nota..."
+            autocomplete="off"
+          />
+          <button type="button" id="clear-search-btn" class="search-close-btn" aria-label="Cerrar búsqueda">
+            CERRAR ✕
+          </button>
+        </div>
+      </div>
+
+      <!-- ÍNDICE TIPOGRÁFICO DE CATEGORÍAS (Sin cajas grises, puro estilo revista) -->
+      <nav class="editorial-nav" id="category-strip" aria-label="Categorías">
+        <!-- Se hidrata con superíndices numéricos estilo SSENSE -->
+      </nav>
+    </header>
+
+    <!-- GALERÍA DE PRODUCTOS (Lookbook sin bordes de caja ni botones pesados) -->
+    <main class="lookbook-main">
+      <div id="bought-banner-actions" class="bought-banner-actions" hidden>
+        <span>ESTÁS VIENDO LOS PRODUCTOS QUE YA CHULEASTE</span>
+        <button type="button" id="reset-bought-btn" class="text-underline-btn">
+          RESTAURAR TODOS
+        </button>
+      </div>
+
+      <section id="product-grid" class="lookbook-grid cols-2" aria-live="polite">
+        <!-- Tarjetas limpias renderizadas dinámicamente -->
+      </section>
+
+      <!-- ESTADO VACÍO EDITORIAL -->
+      <section id="empty-state" class="editorial-empty" hidden>
+        <p class="empty-index">00 // VACÍO</p>
+        <h2 class="empty-heading" id="empty-title">SIN PRODUCTOS EN ESTA VISTA</h2>
+        <p class="empty-copy" id="empty-desc">
+          Ya chuleaste todo aquí o aún no hemos agregado productos a esta categoría.
+        </p>
+        <button type="button" id="empty-reset-filters-btn" class="editorial-outline-btn">
+          VER TODA LA COLECCIÓN
+        </button>
+      </section>
+    </main>
+
+    <!-- TOAST DE DESHACER (Por si chuleas sin querer caminando) -->
+    <div id="undo-toast" class="floating-toast" hidden role="status" aria-live="assertive">
+      <span class="toast-label" id="toast-msg">Chuleado</span>
+      <button type="button" id="toast-undo-btn" class="toast-undo-action">
+        DESHACER
+      </button>
+    </div>
+
+    <!-- DOCK FLOTANTE INFERIOR PARA EL PULGAR (Estilo App Nativa iOS / Shop) -->
+    <div class="bottom-dock-wrap">
+      <nav class="bottom-dock" aria-label="Controles rápidos">
+        <button
+          type="button"
+          id="dock-tab-pending"
+          class="dock-pill active"
+          data-status="pending"
+        >
+          <span>PENDIENTES</span>
+          <span class="dock-count" id="count-pending">0</span>
+        </button>
+
+        <button
+          type="button"
+          id="dock-tab-bought"
+          class="dock-pill"
+          data-status="bought"
+        >
+          <span>LISTOS ✓</span>
+          <span class="dock-count" id="count-bought">0</span>
+        </button>
+
+        <span class="dock-divider" aria-hidden="true"></span>
+
+        <button
+          type="button"
+          id="grid-toggle-btn"
+          class="dock-icon-btn"
+          title="Alternar 1 o 2 columnas"
+          aria-label="Alternar vista de columnas"
+        >
+          <span id="grid-toggle-label">2×</span>
+        </button>
+
+        <button
+          type="button"
+          id="open-quick-add-btn"
+          class="dock-add-btn"
+          title="Agregar ítem rápido"
+          aria-label="Agregar ítem rápido"
+        >
+          +
+        </button>
+      </nav>
+    </div>
+
+    <!-- HOJA DESLIZABLE INFERIOR DE DETALLE (Bottom Sheet al tocar un producto) -->
+    <div id="detail-modal" class="sheet-backdrop" hidden aria-hidden="true">
+      <div class="bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="sheet-handle-bar" id="close-detail-handle">
+          <span class="sheet-pill-indicator"></span>
+        </div>
+
+        <div class="sheet-top-bar">
+          <span class="sheet-cat-label" id="modal-category">ZAPATOS</span>
+          <button type="button" id="close-detail-modal" class="sheet-close-btn">
+            CERRAR ✕
+          </button>
+        </div>
+
+        <div class="sheet-content">
+          <div class="sheet-image-stage">
+            <img id="modal-image" src="" alt="" />
+          </div>
+
+          <div class="sheet-info">
+            <div class="sheet-header-block">
+              <h2 class="sheet-title" id="modal-title">Nombre</h2>
+              <p class="sheet-price" id="modal-price"></p>
+            </div>
+
+            <div class="sheet-specs-grid" id="modal-specs"></div>
+
+            <div class="sheet-notes" id="modal-notes-box">
+              <span class="sheet-notes-label">NOTA PERSONAL</span>
+              <p id="modal-notes"></p>
+            </div>
+
+            <div class="sheet-actions">
+              <button type="button" id="modal-toggle-btn" class="sheet-cta-btn">
+                ✓ MARCAR COMO COMPRADO
+              </button>
+              <button type="button" id="modal-delete-custom-btn" class="sheet-delete-btn" hidden>
+                ELIMINAR RECORDATORIO RÁPIDO
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HOJA DESLIZABLE PARA AGREGAR ALGO RÁPIDO EN LA CALLE -->
+    <div id="quick-add-modal" class="sheet-backdrop" hidden aria-hidden="true">
+      <div class="bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="quick-add-heading">
+        <div class="sheet-handle-bar">
+          <span class="sheet-pill-indicator"></span>
+        </div>
+
+        <div class="sheet-top-bar">
+          <span class="sheet-cat-label">NUEVO ÍTEM EN EL CELULAR</span>
+          <button type="button" id="close-quick-add-modal" class="sheet-close-btn">
+            CERRAR ✕
+          </button>
+        </div>
+
+        <form id="quick-add-form" class="sheet-form">
+          <h2 id="quick-add-heading" class="sheet-title">AGREGAR A LA COLECCIÓN</h2>
+
+          <label class="editorial-field">
+            <span>PRODUCTO *</span>
+            <input type="text" name="name" required placeholder="Ej: New Balance 550 Blancos" />
+          </label>
+
+          <div class="field-grid-2">
+            <label class="editorial-field">
+              <span>CATEGORÍA</span>
+              <select name="category">
+                <option value="Zapatos">Zapatos</option>
+                <option value="Ropa">Ropa</option>
+                <option value="Accesorios">Accesorios</option>
+                <option value="Tecnología">Tech</option>
+              </select>
+            </label>
+
+            <label class="editorial-field">
+              <span>PRECIO EST. (COP)</span>
+              <input type="number" name="estimatedPrice" placeholder="250000" step="1000" />
+            </label>
+          </div>
+
+          <div class="field-grid-2">
+            <label class="editorial-field">
+              <span>TALLA / MEDIDA</span>
+              <input type="text" name="spec" placeholder="Talla 40" />
+            </label>
+
+            <label class="editorial-field">
+              <span>COLOR</span>
+              <input type="text" name="colorway" placeholder="Blanco / Gris" />
+            </label>
+          </div>
+
+          <label class="editorial-field">
+            <span>DÓNDE BUSCARLO</span>
+            <input type="text" name="storeHint" placeholder="Ej: Centro / Palacio Nacional" />
+          </label>
+
+          <label class="editorial-field">
+            <span>URL DE IMAGEN (OPCIONAL)</span>
+            <input type="url" name="image" placeholder="https://..." />
+          </label>
+
+          <label class="editorial-field">
+            <span>NOTA PERSONAL</span>
+            <input type="text" name="notes" placeholder="Detalles a revisar antes de comprar..." />
+          </label>
+
+          <button type="submit" class="sheet-cta-btn">
+            GUARDAR EN LA COLECCIÓN
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script
+    is:inline
+    define:vars={{ serializedProducts, serializedCategories }}
+  >
+    window.__INITIAL_PRODUCTS__ = JSON.parse(serializedProducts);
+    window.__CATEGORIES__ = JSON.parse(serializedCategories);
+  </script>
+
+  <script>
+    import type { ProductItem } from '../data/products';
+
+    declare global {
+      interface Window {
+        __INITIAL_PRODUCTS__: ProductItem[];
+        __CATEGORIES__: Array<{ id: string; label: string }>;
+      }
+    }
+
+    const STORAGE_KEY_BOUGHT = 'personal_sales_bought_ids_v1';
+    const STORAGE_KEY_CUSTOM_ITEMS = 'personal_sales_custom_items_v1';
+    const STORAGE_KEY_GRID_COLS = 'personal_sales_grid_cols_v1';
+
+    let boughtIds = new Set<string>();
+    let customItems: ProductItem[] = [];
+    let currentStatusTab: 'pending' | 'bought' = 'pending';
+    let currentCategory = 'Todos';
+    let searchQuery = '';
+    let isSearchOpen = false;
+    let gridCols: 1 | 2 = 2;
+    let lastCheckedId: string | null = null;
+    let toastTimer: number | null = null;
+    let activeModalProductId: string | null = null;
+
+    function loadPersistedState() {
+      try {
+        const rawBought = localStorage.getItem(STORAGE_KEY_BOUGHT);
+        if (rawBought) boughtIds = new Set(JSON.parse(rawBought));
+
+        const rawCustom = localStorage.getItem(STORAGE_KEY_CUSTOM_ITEMS);
+        if (rawCustom) customItems = JSON.parse(rawCustom);
+
+        const savedCols = localStorage.getItem(STORAGE_KEY_GRID_COLS);
+        if (savedCols === '1' || savedCols === '2') {
+          gridCols = Number(savedCols) as 1 | 2;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function saveBoughtState() {
+      try {
+        localStorage.setItem(STORAGE_KEY_BOUGHT, JSON.stringify([...boughtIds]));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function saveCustomItems() {
+      try {
+        localStorage.setItem(STORAGE_KEY_CUSTOM_ITEMS, JSON.stringify(customItems));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function getAllProducts(): ProductItem[] {
+      return [...customItems, ...(window.__INITIAL_PRODUCTS__ || [])];
+    }
+
+    function formatCOP(value?: number): string {
+      if (!value || isNaN(value)) return '';
+      return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        maximumFractionDigits: 0,
+      }).format(value);
+    }
+
+    function padTwo(n: number): string {
+      return String(n).padStart(2, '0');
+    }
+
+    function normalizeText(str: string): string {
+      return (str || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function matchesSearch(item: ProductItem, query: string): boolean {
+      if (!query.trim()) return true;
+      const terms = normalizeText(query).split(/\s+/).filter(Boolean);
+      const haystack = normalizeText(
+        [
+          item.name,
+          item.category,
+          item.spec,
+          item.colorway,
+          item.storeHint,
+          item.notes,
+          ...(item.tags || []),
+        ].join(' ')
+      );
+      return terms.every((t) => haystack.includes(t));
+    }
+
+    function renderApp() {
+      const allProducts = getAllProducts();
+      const pendingProducts = allProducts.filter((p) => !boughtIds.has(p.id));
+      const boughtProducts = allProducts.filter((p) => boughtIds.has(p.id));
+
+      // Contadores en el Dock inferior
+      const countPendingEl = document.getElementById('count-pending');
+      const countBoughtEl = document.getElementById('count-bought');
+      if (countPendingEl) countPendingEl.textContent = String(pendingProducts.length);
+      if (countBoughtEl) countBoughtEl.textContent = String(boughtProducts.length);
+
+      // Estado del Dock
+      const dockPending = document.getElementById('dock-tab-pending');
+      const dockBought = document.getElementById('dock-tab-bought');
+      dockPending?.classList.toggle('active', currentStatusTab === 'pending');
+      dockBought?.classList.toggle('active', currentStatusTab === 'bought');
+
+      // Cabecera editorial (meta + título dinámico)
+      const statusTagEl = document.getElementById('header-status-tag');
+      const budgetSummaryEl = document.getElementById('budget-summary');
+      const editorialHeadingEl = document.getElementById('editorial-heading');
+      const boughtBannerEl = document.getElementById('bought-banner-actions');
+
+      const basePool = currentStatusTab === 'pending' ? pendingProducts : boughtProducts;
+      const totalMoney = basePool.reduce((acc, p) => acc + (p.estimatedPrice || 0), 0);
+
+      if (statusTagEl) {
+        statusTagEl.textContent =
+          currentStatusTab === 'pending' ? 'LOOKBOOK // POR COMPRAR' : 'ARCHIVO // YA COMPRADOS';
+      }
+
+      if (budgetSummaryEl) {
+        const moneyStr = totalMoney > 0 ? ` · ${formatCOP(totalMoney)}` : '';
+        budgetSummaryEl.textContent = `${padTwo(basePool.length)} ITEMS${moneyStr}`;
+      }
+
+      if (editorialHeadingEl) {
+        if (searchQuery.trim()) {
+          editorialHeadingEl.textContent = `"${searchQuery.toUpperCase()}"`;
+        } else if (currentCategory === 'Todos') {
+          editorialHeadingEl.textContent = currentStatusTab === 'pending' ? 'COLECCIÓN' : 'COMPRADOS';
+        } else {
+          editorialHeadingEl.textContent = currentCategory.toUpperCase();
+        }
+      }
+
+      if (boughtBannerEl) {
+        boughtBannerEl.hidden = !(currentStatusTab === 'bought' && boughtProducts.length > 0);
+      }
+
+      // Renderizar índice tipográfico de categorías (Estilo SSENSE / Zara)
+      const categoryStrip = document.getElementById('category-strip');
+      if (categoryStrip) {
+        const categories = window.__CATEGORIES__ || [];
+        categoryStrip.innerHTML = categories
+          .map((cat) => {
+            const count =
+              cat.id === 'Todos'
+                ? basePool.length
+                : basePool.filter((p) => p.category.toLowerCase() === cat.id.toLowerCase()).length;
+            const isActive = currentCategory === cat.id;
+            return `
+              <button
+                type="button"
+                class="editorial-cat-link ${isActive ? 'active' : ''} ${count === 0 && cat.id !== 'Todos' ? 'is-empty' : ''}"
+                data-category="${cat.id}"
+              >
+                <span>${cat.label}</span>
+                <sup class="cat-sup">${padTwo(count)}</sup>
+              </button>
+            `;
+          })
+          .join('');
+      }
+
+      // Filtrar productos visibles
+      const visibleProducts = basePool.filter((item) => {
+        const matchesCat =
+          currentCategory === 'Todos' ||
+          item.category.toLowerCase() === currentCategory.toLowerCase();
+        return matchesCat && matchesSearch(item, searchQuery);
+      });
+
+      // Columnas (1x o 2x)
+      const gridEl = document.getElementById('product-grid');
+      const emptyEl = document.getElementById('empty-state');
+      const gridToggleLabel = document.getElementById('grid-toggle-label');
+
+      if (gridToggleLabel) {
+        gridToggleLabel.textContent = gridCols === 2 ? '2×' : '1×';
+      }
+
+      if (!gridEl || !emptyEl) return;
+
+      gridEl.classList.toggle('cols-1', gridCols === 1);
+      gridEl.classList.toggle('cols-2', gridCols === 2);
+
+      if (visibleProducts.length === 0) {
+        gridEl.hidden = true;
+        emptyEl.hidden = false;
+        const emptyTitle = document.getElementById('empty-title');
+        const emptyDesc = document.getElementById('empty-desc');
+
+        if (currentStatusTab === 'pending') {
+          if (emptyTitle) {
+            emptyTitle.textContent = searchQuery.trim()
+              ? 'SIN COINCIDENCIAS'
+              : currentCategory === 'Todos'
+              ? 'COLECCIÓN COMPLETADA ✓'
+              : `SIN PENDIENTES EN ${currentCategory.toUpperCase()}`;
+          }
+          if (emptyDesc) {
+            emptyDesc.textContent = searchQuery.trim()
+              ? 'Intenta con otra palabra clave.'
+              : 'Todos los ítems de esta sección ya fueron chuleados o aún no hemos agregado productos aquí.';
+          }
+        } else {
+          if (emptyTitle) emptyTitle.textContent = 'NINGÚN PRODUCTO CHULEADO AÚN';
+          if (emptyDesc) {
+            emptyDesc.textContent =
+              'Toca el botón ✓ en la esquina de cualquier producto cuando lo compres en el centro.';
+          }
+        }
+        return;
+      }
+
+      gridEl.hidden = false;
+      emptyEl.hidden = true;
+
+      // Renderizar tarjetas limpias tipo Lookbook (Sin bordes, sin botones gigantes abajo)
+      gridEl.innerHTML = visibleProducts
+        .map((product, idx) => {
+          const isBought = boughtIds.has(product.id);
+          const priceFormatted = formatCOP(product.estimatedPrice);
+          const indexStr = padTwo(idx + 1);
+
+          const metaParts = [product.category.toUpperCase()];
+          if (product.spec) metaParts.push(product.spec.toUpperCase());
+
+          const subParts = [];
+          if (product.colorway) subParts.push(product.colorway);
+          if (priceFormatted) subParts.push(priceFormatted);
+
+          return `
+            <article class="lookbook-item ${isBought ? 'is-bought' : ''}" data-id="${product.id}">
+              <div class="lookbook-media" data-open-detail="${product.id}">
+                <img
+                  src="${product.image || 'https://images.unsplash.com/photo-1539185441755-769473a23570?auto=format&fit=crop&w=900&q=80'}"
+                  alt="${product.name}"
+                  loading="lazy"
+                  class="lookbook-img"
+                />
+
+                <span class="item-index-tag">${indexStr}</span>
+
+                ${
+                  product.priority === 'alta' && !isBought
+                    ? `<span class="item-priority-dot" title="Prioridad alta"></span>`
+                    : ''
+                }
+
+                <!-- BOTÓN MINIMALISTA DE CHULEAR EN LA ESQUINA DE LA FOTO -->
+                <button
+                  type="button"
+                  class="quick-check-trigger ${isBought ? 'checked' : ''}"
+                  data-toggle-id="${product.id}"
+                  aria-label="${isBought ? 'Desmarcar compra' : 'Chulear como comprado'}"
+                  title="${isBought ? 'Devolver a pendientes' : 'Chulear compra'}"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="square" stroke-linejoin="miter">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </button>
+              </div>
+
+              <div class="lookbook-caption" data-open-detail="${product.id}">
+                <p class="caption-overline">${metaParts.join(' · ')}</p>
+                <h2 class="caption-title">${product.name}</h2>
+                <p class="caption-sub">${subParts.join(' — ')}</p>
+              </div>
+            </article>
+          `;
+        })
+        .join('');
+    }
+
+    function toggleProductBought(productId: string) {
+      const product = getAllProducts().find((p) => p.id === productId);
+      if (!product) return;
+
+      if (boughtIds.has(productId)) {
+        boughtIds.delete(productId);
+        hideToast();
+      } else {
+        boughtIds.add(productId);
+        lastCheckedId = productId;
+        showUndoToast(`✓ ${product.name}`);
+      }
+
+      saveBoughtState();
+      renderApp();
+    }
+
+    function showUndoToast(message: string) {
+      const toast = document.getElementById('undo-toast');
+      const msgEl = document.getElementById('toast-msg');
+      if (!toast || !msgEl) return;
+
+      msgEl.textContent = message;
+      toast.hidden = false;
+
+      if (toastTimer) window.clearTimeout(toastTimer);
+      toastTimer = window.setTimeout(() => {
+        toast.hidden = true;
+      }, 4200);
+    }
+
+    function hideToast() {
+      const toast = document.getElementById('undo-toast');
+      if (toast) toast.hidden = true;
+      if (toastTimer) window.clearTimeout(toastTimer);
+    }
+
+    function openDetailModal(productId: string) {
+      const product = getAllProducts().find((p) => p.id === productId);
+      if (!product) return;
+
+      activeModalProductId = productId;
+      const modal = document.getElementById('detail-modal');
+      const img = document.getElementById('modal-image') as HTMLImageElement | null;
+      const cat = document.getElementById('modal-category');
+      const title = document.getElementById('modal-title');
+      const price = document.getElementById('modal-price');
+      const specs = document.getElementById('modal-specs');
+      const notesBox = document.getElementById('modal-notes-box');
+      const notes = document.getElementById('modal-notes');
+      const toggleBtn = document.getElementById('modal-toggle-btn');
+      const deleteCustomBtn = document.getElementById('modal-delete-custom-btn');
+
+      if (!modal) return;
+
+      if (img) {
+        img.src =
+          product.image ||
+          'https://images.unsplash.com/photo-1539185441755-769473a23570?auto=format&fit=crop&w=900&q=80';
+        img.alt = product.name;
+      }
+      if (cat) cat.textContent = `${product.category.toUpperCase()} // DETALLE`;
+      if (title) title.textContent = product.name;
+      if (price) price.textContent = formatCOP(product.estimatedPrice);
+
+      if (specs) {
+        const rows = [];
+        if (product.spec) {
+          rows.push(`<div class="spec-cell"><span class="spec-k">TALLA / REF</span><span class="spec-v">${product.spec}</span></div>`);
+        }
+        if (product.colorway) {
+          rows.push(`<div class="spec-cell"><span class="spec-k">COLOR</span><span class="spec-v">${product.colorway}</span></div>`);
+        }
+        if (product.storeHint) {
+          rows.push(`<div class="spec-cell full"><span class="spec-k">DÓNDE BUSCAR</span><span class="spec-v">${product.storeHint}</span></div>`);
+        }
+        specs.innerHTML = rows.join('');
+        specs.hidden = rows.length === 0;
+      }
+
+      if (notesBox && notes) {
+        if (product.notes) {
+          notesBox.hidden = false;
+          notes.textContent = product.notes;
+        } else {
+          notesBox.hidden = true;
+        }
+      }
+
+      const isBought = boughtIds.has(productId);
+      if (toggleBtn) {
+        toggleBtn.textContent = isBought ? '↩ DEVOLVER A PENDIENTES' : '✓ CHULEAR COMPRA';
+        toggleBtn.className = isBought ? 'sheet-outline-btn' : 'sheet-cta-btn';
+      }
+
+      const isCustom = customItems.some((c) => c.id === productId);
+      if (deleteCustomBtn) {
+        deleteCustomBtn.hidden = !isCustom;
+      }
+
+      modal.hidden = false;
+      modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeDetailModal() {
+      const modal = document.getElementById('detail-modal');
+      if (modal) {
+        modal.hidden = true;
+        modal.setAttribute('aria-hidden', 'true');
+      }
+      activeModalProductId = null;
+    }
+
+    function setupEvents() {
+      document.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+
+        // 1. Categoría
+        const catBtn = target.closest('[data-category]') as HTMLElement | null;
+        if (catBtn) {
+          currentCategory = catBtn.getAttribute('data-category') || 'Todos';
+          renderApp();
+          return;
+        }
+
+        // 2. Botón rápido de chulear en la esquina de la foto
+        const toggleBtn = target.closest('[data-toggle-id]') as HTMLElement | null;
+        if (toggleBtn) {
+          e.stopPropagation();
+          const id = toggleBtn.getAttribute('data-toggle-id');
+          if (id) {
+            const card = toggleBtn.closest('.lookbook-item') as HTMLElement | null;
+            toggleBtn.classList.add('checked');
+            if (card) {
+              card.classList.add('checking-out');
+              window.setTimeout(() => toggleProductBought(id), 200);
+            } else {
+              toggleProductBought(id);
+            }
+          }
+          return;
+        }
+
+        // 3. Abrir hoja de detalle al tocar foto o texto
+        const detailTrigger = target.closest('[data-open-detail]') as HTMLElement | null;
+        if (detailTrigger) {
+          const id = detailTrigger.getAttribute('data-open-detail');
+          if (id) openDetailModal(id);
+          return;
+        }
+      });
+
+      // Dock inferior: Pendientes vs Listos
+      document.getElementById('dock-tab-pending')?.addEventListener('click', () => {
+        currentStatusTab = 'pending';
+        renderApp();
+      });
+
+      document.getElementById('dock-tab-bought')?.addEventListener('click', () => {
+        currentStatusTab = 'bought';
+        renderApp();
+      });
+
+      // Buscador desplegable
+      const searchDrawer = document.getElementById('search-drawer');
+      const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
+
+      document.getElementById('top-search-trigger')?.addEventListener('click', () => {
+        isSearchOpen = !isSearchOpen;
+        if (searchDrawer) searchDrawer.hidden = !isSearchOpen;
+        if (isSearchOpen && searchInput) {
+          searchInput.focus();
+        } else if (!isSearchOpen && searchInput) {
+          searchInput.value = '';
+          searchQuery = '';
+          renderApp();
+        }
+      });
+
+      searchInput?.addEventListener('input', () => {
+        searchQuery = searchInput.value;
+        renderApp();
+      });
+
+      document.getElementById('clear-search-btn')?.addEventListener('click', () => {
+        isSearchOpen = false;
+        if (searchDrawer) searchDrawer.hidden = true;
+        if (searchInput) searchInput.value = '';
+        searchQuery = '';
+        renderApp();
+      });
+
+      // Cambiar columnas 2x / 1x
+      document.getElementById('grid-toggle-btn')?.addEventListener('click', () => {
+        gridCols = gridCols === 2 ? 1 : 2;
+        try {
+          localStorage.setItem(STORAGE_KEY_GRID_COLS, String(gridCols));
+        } catch {}
+        renderApp();
+      });
+
+      // Toast Deshacer
+      document.getElementById('toast-undo-btn')?.addEventListener('click', () => {
+        if (lastCheckedId) {
+          boughtIds.delete(lastCheckedId);
+          saveBoughtState();
+          lastCheckedId = null;
+          hideToast();
+          renderApp();
+        }
+      });
+
+      // Reset filtros en vista vacía
+      document.getElementById('empty-reset-filters-btn')?.addEventListener('click', () => {
+        currentStatusTab = 'pending';
+        currentCategory = 'Todos';
+        searchQuery = '';
+        if (searchInput) searchInput.value = '';
+        if (searchDrawer) searchDrawer.hidden = true;
+        isSearchOpen = false;
+        renderApp();
+      });
+
+      // Restaurar todos los comprados
+      document.getElementById('reset-bought-btn')?.addEventListener('click', () => {
+        boughtIds.clear();
+        saveBoughtState();
+        currentStatusTab = 'pending';
+        renderApp();
+      });
+
+      // Cerrar hoja de detalle
+      document.getElementById('close-detail-modal')?.addEventListener('click', closeDetailModal);
+      document.getElementById('close-detail-handle')?.addEventListener('click', closeDetailModal);
+      document.getElementById('detail-modal')?.addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closeDetailModal();
+      });
+
+      document.getElementById('modal-toggle-btn')?.addEventListener('click', () => {
+        if (activeModalProductId) {
+          const id = activeModalProductId;
+          closeDetailModal();
+          toggleProductBought(id);
+        }
+      });
+
+      document.getElementById('modal-delete-custom-btn')?.addEventListener('click', () => {
+        if (activeModalProductId) {
+          customItems = customItems.filter((item) => item.id !== activeModalProductId);
+          boughtIds.delete(activeModalProductId);
+          saveCustomItems();
+          saveBoughtState();
+          closeDetailModal();
+          renderApp();
+        }
+      });
+
+      // Modal Agregar Rápido
+      const quickAddModal = document.getElementById('quick-add-modal');
+      const quickAddForm = document.getElementById('quick-add-form') as HTMLFormElement | null;
+
+      document.getElementById('open-quick-add-btn')?.addEventListener('click', () => {
+        if (quickAddModal) {
+          quickAddModal.hidden = false;
+          quickAddModal.setAttribute('aria-hidden', 'false');
+        }
+      });
+
+      const closeQuickAdd = () => {
+        if (quickAddModal) {
+          quickAddModal.hidden = true;
+          quickAddModal.setAttribute('aria-hidden', 'true');
+        }
+      };
+
+      document.getElementById('close-quick-add-modal')?.addEventListener('click', closeQuickAdd);
+      quickAddModal?.addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closeQuickAdd();
+      });
+
+      quickAddForm?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const formData = new FormData(quickAddForm);
+        const name = String(formData.get('name') || '').trim();
+        if (!name) return;
+
+        const priceRaw = Number(formData.get('estimatedPrice') || 0);
+        const category = String(formData.get('category') || 'Zapatos');
+        const newItem: ProductItem = {
+          id: 'custom-' + Date.now(),
+          name,
+          category,
+          estimatedPrice: priceRaw > 0 ? priceRaw : undefined,
+          spec: String(formData.get('spec') || '').trim() || undefined,
+          colorway: String(formData.get('colorway') || '').trim() || undefined,
+          storeHint: String(formData.get('storeHint') || '').trim() || undefined,
+          image:
+            String(formData.get('image') || '').trim() ||
+            'https://images.unsplash.com/photo-1539185441755-769473a23570?auto=format&fit=crop&w=900&q=80',
+          notes: String(formData.get('notes') || '').trim() || undefined,
+          priority: 'alta',
+        };
+
+        customItems.unshift(newItem);
+        saveCustomItems();
+        quickAddForm.reset();
+        closeQuickAdd();
+        currentStatusTab = 'pending';
+        currentCategory = 'Todos';
+        renderApp();
+      });
+    }
+
+    loadPersistedState();
+    setupEvents();
+    renderApp();
+  </script>
+</Layout>
+
+<style is:global>
+  /* BASE LOOKBOOK */
+  .lookbook-app {
+    min-height: 100dvh;
+    background-color: var(--canvas);
+    color: var(--ink);
+    padding-bottom: 110px; /* Espacio para el dock flotante inferior */
+  }
+
+  /* CABECERA EDITORIAL (New Balance × SSENSE) */
+  .editorial-header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background-color: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--hairline);
+    padding: 14px 16px 0;
+  }
+
+  .header-meta-row {
+    max-width: 1320px;
+    margin: 0 auto 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--ink-muted);
+  }
+
+  .header-title-row {
+    max-width: 1320px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 10px;
+  }
+
+  .editorial-title {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+  }
+
+  @media (min-width: 768px) {
+    .editorial-title {
+      font-size: 44px;
+    }
+  }
+
+  .minimal-icon-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* BUSCADOR EDITORIAL DESPLEGABLE */
+  .search-drawer {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 8px 0 12px;
+    border-top: 1px solid var(--hairline);
+  }
+
+  .search-line {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .editorial-search-input {
+    flex: 1;
+    height: 38px;
+    border: none;
+    background: transparent;
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--ink);
+  }
+
+  .editorial-search-input:focus {
+    outline: none;
+  }
+
+  .editorial-search-input::placeholder {
+    color: var(--ink-light);
+  }
+
+  .search-close-btn {
+    background: none;
+    border: none;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--ink-muted);
+    padding: 6px 4px;
+  }
+
+  /* NAVEGACIÓN TIPOGRÁFICA CON SUPERÍNDICES (Cero cajas grises) */
+  .editorial-nav {
+    max-width: 1320px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    border-top: 1px solid var(--hairline);
+  }
+
+  .editorial-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .editorial-cat-link {
+    position: relative;
+    height: 42px;
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--ink-light);
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: color 0.15s ease;
+  }
+
+  .editorial-cat-link.active {
+    color: var(--ink);
+  }
+
+  .editorial-cat-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: var(--ink);
+  }
+
+  .cat-sup {
+    font-size: 9px;
+    font-weight: 700;
+    transform: translateY(-4px);
+    opacity: 0.8;
+  }
+
+  /* CONTENEDOR DE LA GALERÍA */
+  .lookbook-main {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 20px 16px 40px;
+  }
+
+  .bought-banner-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    margin-bottom: 20px;
+    background-color: var(--surface-1);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  .text-underline-btn {
+    background: none;
+    border: none;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--ink);
+    text-decoration: underline;
+    white-space: nowrap;
+  }
+
+  /* CUADRÍCULA LOOKBOOK (Sin bordes de caja, puro espacio negativo) */
+  .lookbook-grid {
+    display: grid;
+  }
+
+  .lookbook-grid.cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 12px;
+    row-gap: 28px;
+  }
+
+  .lookbook-grid.cols-1 {
+    grid-template-columns: 1fr;
+    row-gap: 36px;
+  }
+
+  @media (min-width: 768px) {
+    .lookbook-grid.cols-2,
+    .lookbook-grid.cols-1 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      column-gap: 20px;
+      row-gap: 36px;
+    }
+  }
+
+  @media (min-width: 1100px) {
+    .lookbook-grid.cols-2,
+    .lookbook-grid.cols-1 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      column-gap: 20px;
+      row-gap: 40px;
+    }
+  }
+
+  /* ITEM INDIVIDUAL DEL LOOKBOOK */
+  .lookbook-item {
+    display: flex;
+    flex-direction: column;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .lookbook-item.checking-out {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
+  }
+
+  /* CONTENEDOR DE FOTO (Vertical 4:5 editorial sobre gris #f5f5f5) */
+  .lookbook-media {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    background-color: var(--surface-1);
+    overflow: hidden;
+    cursor: pointer;
+    margin-bottom: 10px;
+  }
+
+  .lookbook-grid.cols-1 .lookbook-media {
+    aspect-ratio: 1 / 1;
+  }
+
+  .lookbook-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .lookbook-media:hover .lookbook-img {
+    transform: scale(1.03);
+  }
+
+  .item-index-tag {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--ink);
+    background-color: rgba(255, 255, 255, 0.85);
+    padding: 2px 6px;
+  }
+
+  .item-priority-dot {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    width: 8px;
+    height: 8px;
+    background-color: var(--promo-yellow);
+    box-shadow: 0 0 0 2px var(--ink);
+  }
+
+  /* BOTÓN FLOTANTE MINIMALISTA DE CHULEAR EN LA ESQUINA DE LA FOTO */
+  .quick-check-trigger {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 36px;
+    height: 36px;
+    background-color: rgba(255, 255, 255, 0.92);
+    color: var(--ink);
+    border: 1px solid rgba(35, 31, 32, 0.14);
+    border-radius: var(--radius-xs);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease, color 0.15s ease, transform 0.12s ease;
+  }
+
+  .quick-check-trigger:active {
+    transform: scale(0.9);
+  }
+
+  .quick-check-trigger.checked {
+    background-color: var(--ink);
+    color: var(--canvas);
+    border-color: var(--ink);
+  }
+
+  /* TEXTOS EDITORIALES DEBAJO DE LA FOTO (Limpios, sin bordes) */
+  .lookbook-caption {
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .caption-overline {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    color: var(--ink-muted);
+  }
+
+  .caption-title {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--ink);
+  }
+
+  .lookbook-grid.cols-1 .caption-title {
+    font-size: 17px;
+  }
+
+  .caption-sub {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--ink-muted);
+    margin-top: 1px;
+  }
+
+  /* DOCK FLOTANTE INFERIOR (Al alcance del pulgar en la calle) */
+  .bottom-dock-wrap {
+    position: fixed;
+    bottom: 20px;
+    left: 16px;
+    right: 16px;
+    z-index: 50;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .bottom-dock {
+    pointer-events: auto;
+    height: 50px;
+    padding: 5px;
+    background-color: rgba(35, 31, 32, 0.96);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: var(--canvas);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .dock-pill {
+    height: 40px;
+    padding: 0 12px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.65);
+    border: none;
+    border-radius: var(--radius-xs);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .dock-pill.active {
+    background-color: var(--canvas);
+    color: var(--ink);
+  }
+
+  .dock-count {
+    font-size: 10px;
+    opacity: 0.8;
+  }
+
+  .dock-divider {
+    width: 1px;
+    height: 20px;
+    background-color: rgba(255, 255, 255, 0.18);
+    margin: 0 2px;
+  }
+
+  .dock-icon-btn {
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    color: var(--canvas);
+    border: none;
+    border-radius: var(--radius-xs);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .dock-add-btn {
+    width: 40px;
+    height: 40px;
+    background-color: var(--promo-yellow);
+    color: var(--promo-yellow-ink);
+    border: none;
+    border-radius: var(--radius-xs);
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  /* TOAST FLOTANTE SOBRE EL DOCK */
+  .floating-toast {
+    position: fixed;
+    bottom: 80px;
+    left: 16px;
+    right: 16px;
+    max-width: 380px;
+    margin: 0 auto;
+    background-color: var(--ink);
+    color: var(--canvas);
+    padding: 10px 14px;
+    border-radius: var(--radius-xs);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    z-index: 60;
+    font-size: 12px;
+    font-weight: 700;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  }
+
+  .toast-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .toast-undo-action {
+    background: none;
+    border: none;
+    color: var(--promo-yellow);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    flex-shrink: 0;
+  }
+
+  /* ESTADO VACÍO EDITORIAL */
+  .editorial-empty {
+    padding: 72px 16px;
+    text-align: center;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  .empty-index {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--ink-light);
+    margin-bottom: 8px;
+  }
+
+  .empty-heading {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+
+  .empty-copy {
+    font-size: 14px;
+    color: var(--ink-muted);
+    margin-bottom: 24px;
+  }
+
+  .editorial-outline-btn {
+    height: 44px;
+    padding: 0 24px;
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--ink);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+  }
+
+  /* BOTTOM SHEETS (HOJAS DESLIZABLES DESDE ABAJO) */
+  .sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(35, 31, 32, 0.6);
+    z-index: 100;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  @media (min-width: 640px) {
+    .sheet-backdrop {
+      align-items: center;
+      padding: 24px;
+    }
+  }
+
+  .bottom-sheet {
+    width: 100%;
+    max-width: 500px;
+    max-height: 90dvh;
+    background-color: var(--canvas);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sheet-handle-bar {
+    padding: 10px 0 4px;
+    display: flex;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .sheet-pill-indicator {
+    width: 36px;
+    height: 4px;
+    background-color: var(--hairline-dark);
+  }
+
+  .sheet-top-bar {
+    padding: 6px 20px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .sheet-cat-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--ink-muted);
+  }
+
+  .sheet-close-btn {
+    background: none;
+    border: none;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--ink);
+    padding: 4px 0;
+  }
+
+  .sheet-image-stage {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background-color: var(--surface-1);
+    overflow: hidden;
+  }
+
+  .sheet-image-stage img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .sheet-info {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .sheet-header-block {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .sheet-title {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
+  .sheet-price {
+    font-size: 16px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .sheet-specs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 1px solid var(--hairline);
+    border-left: 1px solid var(--hairline);
+  }
+
+  .spec-cell {
+    padding: 10px 12px;
+    border-right: 1px solid var(--hairline);
+    border-bottom: 1px solid var(--hairline);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .spec-cell.full {
+    grid-column: 1 / -1;
+  }
+
+  .spec-k {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--ink-muted);
+  }
+
+  .spec-v {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .sheet-notes {
+    padding: 12px 14px;
+    background-color: var(--surface-1);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .sheet-notes-label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--ink-muted);
+    margin-bottom: 4px;
+  }
+
+  .sheet-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .sheet-cta-btn {
+    width: 100%;
+    height: 44px;
+    background-color: var(--ink);
+    color: var(--canvas);
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+  }
+
+  .sheet-outline-btn {
+    width: 100%;
+    height: 44px;
+    background-color: var(--canvas);
+    color: var(--ink);
+    border: 1px solid var(--ink);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+  }
+
+  .sheet-delete-btn {
+    width: 100%;
+    height: 36px;
+    background: none;
+    border: none;
+    color: var(--sale-red);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  /* FORMULARIO EN HOJA INFERIOR */
+  .sheet-form {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .editorial-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .editorial-field span {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    color: var(--ink-muted);
+  }
+
+  .editorial-field input,
+  .editorial-field select {
+    height: 42px;
+    padding: 0 12px;
+    background-color: var(--surface-1);
+    border: 1px solid transparent;
+    border-radius: var(--radius-xs);
+    font-size: 14px;
+    color: var(--ink);
+  }
+
+  .editorial-field input:focus,
+  .editorial-field select:focus {
+    outline: none;
+    background-color: var(--canvas);
+    border-color: var(--ink);
+  }
+
+  .field-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+</style>

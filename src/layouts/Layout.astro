@@ -1,0 +1,116 @@
+---
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = 'MIS COMPRAS // Catálogo Personal',
+  description = 'Catálogo personal de compras para el centro — diseño editorial de alto contraste para móvil.',
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#231f20" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <title>{title}</title>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    /* Tokens oficiales de new-balance.design.md */
+    --ink: #231f20;
+    --ink-muted: #6b6b6b;
+    --ink-light: #999999;
+    --canvas: #ffffff;
+    --surface-1: #f5f5f5;
+    --surface-2: #ebebeb;
+    --hairline: #d9d9d9;
+    --hairline-dark: #b2b2b2;
+    --error: #e20a17;
+    --success: #2e7d32;
+    --promo-yellow: #f5c400;
+    --promo-yellow-ink: #231f20;
+    --sale-red: #d40000;
+
+    /* Tipografía: Helvetica Neue -> Helvetica -> Inter -> Arial (Binaria: 400 y 700) */
+    --font-sans: "Helvetica Neue", Helvetica, "Inter", Arial, sans-serif;
+
+    /* Radios: 0px tarjetas, 2px inputs/chips, 4px botones CTA */
+    --radius-none: 0px;
+    --radius-xs: 2px;
+    --radius-sm: 4px;
+    --radius-full: 9999px;
+
+    /* Espaciado base 8px */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-base: 16px;
+    --space-md: 24px;
+    --space-lg: 32px;
+    --space-xl: 48px;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    font-family: var(--font-sans);
+    background-color: var(--canvas);
+    color: var(--ink);
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    min-height: 100dvh;
+    background-color: var(--canvas);
+    color: var(--ink);
+    overflow-x: hidden;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font-family: inherit;
+    color: inherit;
+  }
+
+  button {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+  }
+</style>
