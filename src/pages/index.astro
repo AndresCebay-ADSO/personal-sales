@@ -6,248 +6,132 @@ const serializedProducts = JSON.stringify(PRODUCTS);
 const serializedCategories = JSON.stringify(CATEGORIES);
 ---
 
-<Layout title="COLECCIÓN // Lookbook de Compras">
-  <div class="lookbook-app">
-    <!-- CABECERA EDITORIAL MINIMALISTA (Estilo New Balance Lookbook / SSENSE) -->
-    <header class="editorial-header">
-      <div class="header-meta-row">
-        <span class="meta-index" id="header-status-tag">POR COMPRAR // 01</span>
-        <span class="meta-budget" id="budget-summary">0 PENDIENTES</span>
-      </div>
+<Layout title="Mis compras">
+  <div class="minimal-page">
+    <!-- CABECERA ULTRA LIMPIA -->
+    <header class="top-bar">
+      <div class="top-bar-inner">
+        <div class="title-group">
+          <h1 class="page-title">Mis compras</h1>
+          <span class="subtle-count" id="items-counter">0</span>
+        </div>
 
-      <div class="header-title-row">
-        <h1 class="editorial-title" id="editorial-heading">ZAPATOS</h1>
-        <button
-          type="button"
-          id="top-search-trigger"
-          class="minimal-icon-btn"
-          aria-label="Buscar en la colección"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="7.5"></circle>
-            <line x1="20" y1="20" x2="16.2" y2="16.2"></line>
-          </svg>
-        </button>
-      </div>
-
-      <!-- BUSCADOR DESPLEGABLE LIMPIO (Solo ocupa espacio cuando lo usas) -->
-      <div id="search-drawer" class="search-drawer" hidden>
-        <div class="search-line">
-          <input
-            type="search"
-            id="search-input"
-            class="editorial-search-input"
-            placeholder="Filtrar por nombre, color, talla, nota..."
-            autocomplete="off"
-          />
-          <button type="button" id="clear-search-btn" class="search-close-btn" aria-label="Cerrar búsqueda">
-            CERRAR ✕
-          </button>
+        <div class="top-controls">
+          <!-- Selector discreto Pendientes / Comprados -->
+          <div class="segmented-switch" role="tablist">
+            <button
+              type="button"
+              id="tab-pending"
+              class="seg-btn active"
+              role="tab"
+              aria-selected="true"
+            >
+              Pendientes
+            </button>
+            <button
+              type="button"
+              id="tab-bought"
+              class="seg-btn"
+              role="tab"
+              aria-selected="false"
+            >
+              Listos <span id="bought-dot" class="bought-num" hidden>0</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- ÍNDICE TIPOGRÁFICO DE CATEGORÍAS (Sin cajas grises, puro estilo revista) -->
-      <nav class="editorial-nav" id="category-strip" aria-label="Categorías">
-        <!-- Se hidrata con superíndices numéricos estilo SSENSE -->
-      </nav>
+      <!-- BUSCADOR SUAVE Y CATEGORÍAS -->
+      <div class="filter-bar">
+        <div class="search-box">
+          <svg class="search-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input
+            type="search"
+            id="search-input"
+            class="minimal-search"
+            placeholder="Buscar..."
+            autocomplete="off"
+          />
+          <button type="button" id="clear-search-btn" class="clear-btn" hidden aria-label="Limpiar">
+            ✕
+          </button>
+        </div>
+
+        <nav class="pills-nav" id="category-strip" aria-label="Categorías">
+          <!-- Pastillas minimalistas -->
+        </nav>
+      </div>
     </header>
 
-    <!-- GALERÍA DE PRODUCTOS (Lookbook sin bordes de caja ni botones pesados) -->
-    <main class="lookbook-main">
-      <div id="bought-banner-actions" class="bought-banner-actions" hidden>
-        <span>ESTÁS VIENDO LOS PRODUCTOS QUE YA CHULEASTE</span>
-        <button type="button" id="reset-bought-btn" class="text-underline-btn">
-          RESTAURAR TODOS
+    <!-- GALERÍA LIMPIA -->
+    <main class="content-area">
+      <div id="bought-header-bar" class="bought-header-bar" hidden>
+        <span>Cosas que ya compraste</span>
+        <button type="button" id="reset-bought-btn" class="text-btn">
+          Desmarcar todo
         </button>
       </div>
 
-      <section id="product-grid" class="lookbook-grid cols-2" aria-live="polite">
-        <!-- Tarjetas limpias renderizadas dinámicamente -->
+      <section id="product-grid" class="minimal-grid" aria-live="polite">
+        <!-- Tarjetas minimalistas -->
       </section>
 
-      <!-- ESTADO VACÍO EDITORIAL -->
-      <section id="empty-state" class="editorial-empty" hidden>
-        <p class="empty-index">00 // VACÍO</p>
-        <h2 class="empty-heading" id="empty-title">SIN PRODUCTOS EN ESTA VISTA</h2>
-        <p class="empty-copy" id="empty-desc">
-          Ya chuleaste todo aquí o aún no hemos agregado productos a esta categoría.
+      <!-- ESTADO VACÍO TRANQUILO -->
+      <section id="empty-state" class="minimal-empty" hidden>
+        <p class="empty-title" id="empty-title">No hay productos aquí</p>
+        <p class="empty-sub" id="empty-desc">
+          Todo lo de esta categoría ya fue comprado o aún no hay elementos guardados.
         </p>
-        <button type="button" id="empty-reset-filters-btn" class="editorial-outline-btn">
-          VER TODA LA COLECCIÓN
+        <button type="button" id="empty-reset-filters-btn" class="pill-outline-btn">
+          Ver todo
         </button>
       </section>
     </main>
 
-    <!-- TOAST DE DESHACER (Por si chuleas sin querer caminando) -->
-    <div id="undo-toast" class="floating-toast" hidden role="status" aria-live="assertive">
-      <span class="toast-label" id="toast-msg">Chuleado</span>
-      <button type="button" id="toast-undo-btn" class="toast-undo-action">
-        DESHACER
+    <!-- AVISO DISCRETO PARA DESHACER -->
+    <div id="undo-toast" class="minimal-toast" hidden role="status">
+      <span id="toast-msg">Marcado como comprado</span>
+      <button type="button" id="toast-undo-btn" class="toast-undo">
+        Deshacer
       </button>
     </div>
 
-    <!-- DOCK FLOTANTE INFERIOR PARA EL PULGAR (Estilo App Nativa iOS / Shop) -->
-    <div class="bottom-dock-wrap">
-      <nav class="bottom-dock" aria-label="Controles rápidos">
-        <button
-          type="button"
-          id="dock-tab-pending"
-          class="dock-pill active"
-          data-status="pending"
-        >
-          <span>PENDIENTES</span>
-          <span class="dock-count" id="count-pending">0</span>
-        </button>
-
-        <button
-          type="button"
-          id="dock-tab-bought"
-          class="dock-pill"
-          data-status="bought"
-        >
-          <span>LISTOS ✓</span>
-          <span class="dock-count" id="count-bought">0</span>
-        </button>
-
-        <span class="dock-divider" aria-hidden="true"></span>
-
-        <button
-          type="button"
-          id="grid-toggle-btn"
-          class="dock-icon-btn"
-          title="Alternar 1 o 2 columnas"
-          aria-label="Alternar vista de columnas"
-        >
-          <span id="grid-toggle-label">2×</span>
-        </button>
-
-        <button
-          type="button"
-          id="open-quick-add-btn"
-          class="dock-add-btn"
-          title="Agregar ítem rápido"
-          aria-label="Agregar ítem rápido"
-        >
-          +
-        </button>
-      </nav>
-    </div>
-
-    <!-- HOJA DESLIZABLE INFERIOR DE DETALLE (Bottom Sheet al tocar un producto) -->
-    <div id="detail-modal" class="sheet-backdrop" hidden aria-hidden="true">
-      <div class="bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-        <div class="sheet-handle-bar" id="close-detail-handle">
-          <span class="sheet-pill-indicator"></span>
+    <!-- DETALLE DEL PRODUCTO (Hoja limpia al tocar un producto) -->
+    <div id="detail-modal" class="backdrop" hidden aria-hidden="true">
+      <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="sheet-drag" id="close-detail-handle">
+          <span></span>
         </div>
 
-        <div class="sheet-top-bar">
-          <span class="sheet-cat-label" id="modal-category">ZAPATOS</span>
-          <button type="button" id="close-detail-modal" class="sheet-close-btn">
-            CERRAR ✕
+        <div class="sheet-media">
+          <img id="modal-image" src="" alt="" />
+          <button type="button" id="close-detail-modal" class="sheet-close-circle" aria-label="Cerrar">
+            ✕
           </button>
         </div>
 
-        <div class="sheet-content">
-          <div class="sheet-image-stage">
-            <img id="modal-image" src="" alt="" />
+        <div class="sheet-body">
+          <div class="sheet-head">
+            <div>
+              <p class="sheet-cat" id="modal-category">Zapatos</p>
+              <h2 class="sheet-name" id="modal-title">Nombre</h2>
+            </div>
+            <p class="sheet-price" id="modal-price"></p>
           </div>
 
-          <div class="sheet-info">
-            <div class="sheet-header-block">
-              <h2 class="sheet-title" id="modal-title">Nombre</h2>
-              <p class="sheet-price" id="modal-price"></p>
-            </div>
+          <div class="sheet-meta-list" id="modal-specs"></div>
 
-            <div class="sheet-specs-grid" id="modal-specs"></div>
-
-            <div class="sheet-notes" id="modal-notes-box">
-              <span class="sheet-notes-label">NOTA PERSONAL</span>
-              <p id="modal-notes"></p>
-            </div>
-
-            <div class="sheet-actions">
-              <button type="button" id="modal-toggle-btn" class="sheet-cta-btn">
-                ✓ MARCAR COMO COMPRADO
-              </button>
-              <button type="button" id="modal-delete-custom-btn" class="sheet-delete-btn" hidden>
-                ELIMINAR RECORDATORIO RÁPIDO
-              </button>
-            </div>
+          <div class="sheet-note-box" id="modal-notes-box">
+            <p id="modal-notes"></p>
           </div>
-        </div>
-      </div>
-    </div>
 
-    <!-- HOJA DESLIZABLE PARA AGREGAR ALGO RÁPIDO EN LA CALLE -->
-    <div id="quick-add-modal" class="sheet-backdrop" hidden aria-hidden="true">
-      <div class="bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="quick-add-heading">
-        <div class="sheet-handle-bar">
-          <span class="sheet-pill-indicator"></span>
-        </div>
-
-        <div class="sheet-top-bar">
-          <span class="sheet-cat-label">NUEVO ÍTEM EN EL CELULAR</span>
-          <button type="button" id="close-quick-add-modal" class="sheet-close-btn">
-            CERRAR ✕
+          <button type="button" id="modal-toggle-btn" class="primary-action-btn">
+            Marcar como comprado
           </button>
         </div>
-
-        <form id="quick-add-form" class="sheet-form">
-          <h2 id="quick-add-heading" class="sheet-title">AGREGAR A LA COLECCIÓN</h2>
-
-          <label class="editorial-field">
-            <span>PRODUCTO *</span>
-            <input type="text" name="name" required placeholder="Ej: New Balance 550 Blancos" />
-          </label>
-
-          <div class="field-grid-2">
-            <label class="editorial-field">
-              <span>CATEGORÍA</span>
-              <select name="category">
-                <option value="Zapatos">Zapatos</option>
-                <option value="Ropa">Ropa</option>
-                <option value="Accesorios">Accesorios</option>
-                <option value="Tecnología">Tech</option>
-              </select>
-            </label>
-
-            <label class="editorial-field">
-              <span>PRECIO EST. (COP)</span>
-              <input type="number" name="estimatedPrice" placeholder="250000" step="1000" />
-            </label>
-          </div>
-
-          <div class="field-grid-2">
-            <label class="editorial-field">
-              <span>TALLA / MEDIDA</span>
-              <input type="text" name="spec" placeholder="Talla 40" />
-            </label>
-
-            <label class="editorial-field">
-              <span>COLOR</span>
-              <input type="text" name="colorway" placeholder="Blanco / Gris" />
-            </label>
-          </div>
-
-          <label class="editorial-field">
-            <span>DÓNDE BUSCARLO</span>
-            <input type="text" name="storeHint" placeholder="Ej: Centro / Palacio Nacional" />
-          </label>
-
-          <label class="editorial-field">
-            <span>URL DE IMAGEN (OPCIONAL)</span>
-            <input type="url" name="image" placeholder="https://..." />
-          </label>
-
-          <label class="editorial-field">
-            <span>NOTA PERSONAL</span>
-            <input type="text" name="notes" placeholder="Detalles a revisar antes de comprar..." />
-          </label>
-
-          <button type="submit" class="sheet-cta-btn">
-            GUARDAR EN LA COLECCIÓN
-          </button>
-        </form>
       </div>
     </div>
   </div>
@@ -271,16 +155,11 @@ const serializedCategories = JSON.stringify(CATEGORIES);
     }
 
     const STORAGE_KEY_BOUGHT = 'personal_sales_bought_ids_v1';
-    const STORAGE_KEY_CUSTOM_ITEMS = 'personal_sales_custom_items_v1';
-    const STORAGE_KEY_GRID_COLS = 'personal_sales_grid_cols_v1';
 
     let boughtIds = new Set<string>();
-    let customItems: ProductItem[] = [];
     let currentStatusTab: 'pending' | 'bought' = 'pending';
     let currentCategory = 'Todos';
     let searchQuery = '';
-    let isSearchOpen = false;
-    let gridCols: 1 | 2 = 2;
     let lastCheckedId: string | null = null;
     let toastTimer: number | null = null;
     let activeModalProductId: string | null = null;
@@ -289,14 +168,6 @@ const serializedCategories = JSON.stringify(CATEGORIES);
       try {
         const rawBought = localStorage.getItem(STORAGE_KEY_BOUGHT);
         if (rawBought) boughtIds = new Set(JSON.parse(rawBought));
-
-        const rawCustom = localStorage.getItem(STORAGE_KEY_CUSTOM_ITEMS);
-        if (rawCustom) customItems = JSON.parse(rawCustom);
-
-        const savedCols = localStorage.getItem(STORAGE_KEY_GRID_COLS);
-        if (savedCols === '1' || savedCols === '2') {
-          gridCols = Number(savedCols) as 1 | 2;
-        }
       } catch (e) {
         console.error(e);
       }
@@ -310,16 +181,8 @@ const serializedCategories = JSON.stringify(CATEGORIES);
       }
     }
 
-    function saveCustomItems() {
-      try {
-        localStorage.setItem(STORAGE_KEY_CUSTOM_ITEMS, JSON.stringify(customItems));
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
     function getAllProducts(): ProductItem[] {
-      return [...customItems, ...(window.__INITIAL_PRODUCTS__ || [])];
+      return window.__INITIAL_PRODUCTS__ || [];
     }
 
     function formatCOP(value?: number): string {
@@ -329,10 +192,6 @@ const serializedCategories = JSON.stringify(CATEGORIES);
         currency: 'COP',
         maximumFractionDigits: 0,
       }).format(value);
-    }
-
-    function padTwo(n: number): string {
-      return String(n).padStart(2, '0');
     }
 
     function normalizeText(str: string): string {
@@ -359,82 +218,63 @@ const serializedCategories = JSON.stringify(CATEGORIES);
       return terms.every((t) => haystack.includes(t));
     }
 
+    function formatCategoryName(str: string): string {
+      if (!str) return '';
+      return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    }
+
     function renderApp() {
       const allProducts = getAllProducts();
       const pendingProducts = allProducts.filter((p) => !boughtIds.has(p.id));
       const boughtProducts = allProducts.filter((p) => boughtIds.has(p.id));
 
-      // Contadores en el Dock inferior
-      const countPendingEl = document.getElementById('count-pending');
-      const countBoughtEl = document.getElementById('count-bought');
-      if (countPendingEl) countPendingEl.textContent = String(pendingProducts.length);
-      if (countBoughtEl) countBoughtEl.textContent = String(boughtProducts.length);
-
-      // Estado del Dock
-      const dockPending = document.getElementById('dock-tab-pending');
-      const dockBought = document.getElementById('dock-tab-bought');
-      dockPending?.classList.toggle('active', currentStatusTab === 'pending');
-      dockBought?.classList.toggle('active', currentStatusTab === 'bought');
-
-      // Cabecera editorial (meta + título dinámico)
-      const statusTagEl = document.getElementById('header-status-tag');
-      const budgetSummaryEl = document.getElementById('budget-summary');
-      const editorialHeadingEl = document.getElementById('editorial-heading');
-      const boughtBannerEl = document.getElementById('bought-banner-actions');
-
       const basePool = currentStatusTab === 'pending' ? pendingProducts : boughtProducts;
-      const totalMoney = basePool.reduce((acc, p) => acc + (p.estimatedPrice || 0), 0);
 
-      if (statusTagEl) {
-        statusTagEl.textContent =
-          currentStatusTab === 'pending' ? 'LOOKBOOK // POR COMPRAR' : 'ARCHIVO // YA COMPRADOS';
+      // Contador junto al título
+      const counterEl = document.getElementById('items-counter');
+      if (counterEl) counterEl.textContent = String(basePool.length);
+
+      // Botón "Listos" contador
+      const boughtDotEl = document.getElementById('bought-dot');
+      if (boughtDotEl) {
+        boughtDotEl.textContent = String(boughtProducts.length);
+        boughtDotEl.hidden = boughtProducts.length === 0;
       }
 
-      if (budgetSummaryEl) {
-        const moneyStr = totalMoney > 0 ? ` · ${formatCOP(totalMoney)}` : '';
-        budgetSummaryEl.textContent = `${padTwo(basePool.length)} ITEMS${moneyStr}`;
+      // Tabs
+      const tabPending = document.getElementById('tab-pending');
+      const tabBought = document.getElementById('tab-bought');
+      tabPending?.classList.toggle('active', currentStatusTab === 'pending');
+      tabBought?.classList.toggle('active', currentStatusTab === 'bought');
+
+      // Barra de comprados
+      const boughtHeaderBar = document.getElementById('bought-header-bar');
+      if (boughtHeaderBar) {
+        boughtHeaderBar.hidden = !(currentStatusTab === 'bought' && boughtProducts.length > 0);
       }
 
-      if (editorialHeadingEl) {
-        if (searchQuery.trim()) {
-          editorialHeadingEl.textContent = `"${searchQuery.toUpperCase()}"`;
-        } else if (currentCategory === 'Todos') {
-          editorialHeadingEl.textContent = currentStatusTab === 'pending' ? 'COLECCIÓN' : 'COMPRADOS';
-        } else {
-          editorialHeadingEl.textContent = currentCategory.toUpperCase();
-        }
-      }
-
-      if (boughtBannerEl) {
-        boughtBannerEl.hidden = !(currentStatusTab === 'bought' && boughtProducts.length > 0);
-      }
-
-      // Renderizar índice tipográfico de categorías (Estilo SSENSE / Zara)
+      // Categorías (solo mostramos Todos + categorías que existan o las principales de forma limpia)
       const categoryStrip = document.getElementById('category-strip');
       if (categoryStrip) {
         const categories = window.__CATEGORIES__ || [];
         categoryStrip.innerHTML = categories
           .map((cat) => {
-            const count =
-              cat.id === 'Todos'
-                ? basePool.length
-                : basePool.filter((p) => p.category.toLowerCase() === cat.id.toLowerCase()).length;
             const isActive = currentCategory === cat.id;
+            const label = formatCategoryName(cat.label);
             return `
               <button
                 type="button"
-                class="editorial-cat-link ${isActive ? 'active' : ''} ${count === 0 && cat.id !== 'Todos' ? 'is-empty' : ''}"
+                class="cat-pill ${isActive ? 'active' : ''}"
                 data-category="${cat.id}"
               >
-                <span>${cat.label}</span>
-                <sup class="cat-sup">${padTwo(count)}</sup>
+                ${label}
               </button>
             `;
           })
           .join('');
       }
 
-      // Filtrar productos visibles
+      // Filtrado
       const visibleProducts = basePool.filter((item) => {
         const matchesCat =
           currentCategory === 'Todos' ||
@@ -442,19 +282,9 @@ const serializedCategories = JSON.stringify(CATEGORIES);
         return matchesCat && matchesSearch(item, searchQuery);
       });
 
-      // Columnas (1x o 2x)
       const gridEl = document.getElementById('product-grid');
       const emptyEl = document.getElementById('empty-state');
-      const gridToggleLabel = document.getElementById('grid-toggle-label');
-
-      if (gridToggleLabel) {
-        gridToggleLabel.textContent = gridCols === 2 ? '2×' : '1×';
-      }
-
       if (!gridEl || !emptyEl) return;
-
-      gridEl.classList.toggle('cols-1', gridCols === 1);
-      gridEl.classList.toggle('cols-2', gridCols === 2);
 
       if (visibleProducts.length === 0) {
         gridEl.hidden = true;
@@ -465,21 +295,19 @@ const serializedCategories = JSON.stringify(CATEGORIES);
         if (currentStatusTab === 'pending') {
           if (emptyTitle) {
             emptyTitle.textContent = searchQuery.trim()
-              ? 'SIN COINCIDENCIAS'
-              : currentCategory === 'Todos'
-              ? 'COLECCIÓN COMPLETADA ✓'
-              : `SIN PENDIENTES EN ${currentCategory.toUpperCase()}`;
+              ? 'Sin resultados'
+              : 'Todo listo por aquí';
           }
           if (emptyDesc) {
             emptyDesc.textContent = searchQuery.trim()
-              ? 'Intenta con otra palabra clave.'
-              : 'Todos los ítems de esta sección ya fueron chuleados o aún no hemos agregado productos aquí.';
+              ? 'Intenta buscar con otra palabra.'
+              : 'No tienes productos pendientes en esta categoría.';
           }
         } else {
-          if (emptyTitle) emptyTitle.textContent = 'NINGÚN PRODUCTO CHULEADO AÚN';
+          if (emptyTitle) emptyTitle.textContent = 'Aún no has marcado compras';
           if (emptyDesc) {
             emptyDesc.textContent =
-              'Toca el botón ✓ en la esquina de cualquier producto cuando lo compres en el centro.';
+              'Toca el círculo ✓ en cualquier producto cuando ya lo hayas comprado.';
           }
         }
         return;
@@ -488,56 +316,39 @@ const serializedCategories = JSON.stringify(CATEGORIES);
       gridEl.hidden = false;
       emptyEl.hidden = true;
 
-      // Renderizar tarjetas limpias tipo Lookbook (Sin bordes, sin botones gigantes abajo)
+      // Renderizar tarjetas minimalistas
       gridEl.innerHTML = visibleProducts
-        .map((product, idx) => {
+        .map((product) => {
           const isBought = boughtIds.has(product.id);
           const priceFormatted = formatCOP(product.estimatedPrice);
-          const indexStr = padTwo(idx + 1);
-
-          const metaParts = [product.category.toUpperCase()];
-          if (product.spec) metaParts.push(product.spec.toUpperCase());
-
-          const subParts = [];
-          if (product.colorway) subParts.push(product.colorway);
-          if (priceFormatted) subParts.push(priceFormatted);
+          const details = [product.spec, product.colorway].filter(Boolean).join(' · ');
 
           return `
-            <article class="lookbook-item ${isBought ? 'is-bought' : ''}" data-id="${product.id}">
-              <div class="lookbook-media" data-open-detail="${product.id}">
+            <article class="item-card ${isBought ? 'is-bought' : ''}" data-id="${product.id}">
+              <div class="item-photo-wrap" data-open-detail="${product.id}">
                 <img
-                  src="${product.image || 'https://images.unsplash.com/photo-1539185441755-769473a23570?auto=format&fit=crop&w=900&q=80'}"
+                  src="${product.image}"
                   alt="${product.name}"
                   loading="lazy"
-                  class="lookbook-img"
+                  class="item-photo"
                 />
 
-                <span class="item-index-tag">${indexStr}</span>
-
-                ${
-                  product.priority === 'alta' && !isBought
-                    ? `<span class="item-priority-dot" title="Prioridad alta"></span>`
-                    : ''
-                }
-
-                <!-- BOTÓN MINIMALISTA DE CHULEAR EN LA ESQUINA DE LA FOTO -->
                 <button
                   type="button"
-                  class="quick-check-trigger ${isBought ? 'checked' : ''}"
+                  class="check-circle ${isBought ? 'checked' : ''}"
                   data-toggle-id="${product.id}"
-                  aria-label="${isBought ? 'Desmarcar compra' : 'Chulear como comprado'}"
-                  title="${isBought ? 'Devolver a pendientes' : 'Chulear compra'}"
+                  aria-label="${isBought ? 'Desmarcar' : 'Marcar como comprado'}"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="square" stroke-linejoin="miter">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="20 6 9 17 4 12"></polyline>
                   </svg>
                 </button>
               </div>
 
-              <div class="lookbook-caption" data-open-detail="${product.id}">
-                <p class="caption-overline">${metaParts.join(' · ')}</p>
-                <h2 class="caption-title">${product.name}</h2>
-                <p class="caption-sub">${subParts.join(' — ')}</p>
+              <div class="item-info" data-open-detail="${product.id}">
+                <h2 class="item-name">${product.name}</h2>
+                ${details ? `<p class="item-meta">${details}</p>` : ''}
+                ${priceFormatted ? `<p class="item-price">${priceFormatted}</p>` : ''}
               </div>
             </article>
           `;
@@ -555,7 +366,7 @@ const serializedCategories = JSON.stringify(CATEGORIES);
       } else {
         boughtIds.add(productId);
         lastCheckedId = productId;
-        showUndoToast(`✓ ${product.name}`);
+        showUndoToast(`Listo: ${product.name}`);
       }
 
       saveBoughtState();
@@ -573,7 +384,7 @@ const serializedCategories = JSON.stringify(CATEGORIES);
       if (toastTimer) window.clearTimeout(toastTimer);
       toastTimer = window.setTimeout(() => {
         toast.hidden = true;
-      }, 4200);
+      }, 4000);
     }
 
     function hideToast() {
@@ -596,30 +407,27 @@ const serializedCategories = JSON.stringify(CATEGORIES);
       const notesBox = document.getElementById('modal-notes-box');
       const notes = document.getElementById('modal-notes');
       const toggleBtn = document.getElementById('modal-toggle-btn');
-      const deleteCustomBtn = document.getElementById('modal-delete-custom-btn');
 
       if (!modal) return;
 
       if (img) {
-        img.src =
-          product.image ||
-          'https://images.unsplash.com/photo-1539185441755-769473a23570?auto=format&fit=crop&w=900&q=80';
+        img.src = product.image;
         img.alt = product.name;
       }
-      if (cat) cat.textContent = `${product.category.toUpperCase()} // DETALLE`;
+      if (cat) cat.textContent = product.category;
       if (title) title.textContent = product.name;
       if (price) price.textContent = formatCOP(product.estimatedPrice);
 
       if (specs) {
         const rows = [];
         if (product.spec) {
-          rows.push(`<div class="spec-cell"><span class="spec-k">TALLA / REF</span><span class="spec-v">${product.spec}</span></div>`);
+          rows.push(`<div class="meta-row"><span>Talla / Medida</span><strong>${product.spec}</strong></div>`);
         }
         if (product.colorway) {
-          rows.push(`<div class="spec-cell"><span class="spec-k">COLOR</span><span class="spec-v">${product.colorway}</span></div>`);
+          rows.push(`<div class="meta-row"><span>Color</span><strong>${product.colorway}</strong></div>`);
         }
         if (product.storeHint) {
-          rows.push(`<div class="spec-cell full"><span class="spec-k">DÓNDE BUSCAR</span><span class="spec-v">${product.storeHint}</span></div>`);
+          rows.push(`<div class="meta-row"><span>Dónde mirar</span><strong>${product.storeHint}</strong></div>`);
         }
         specs.innerHTML = rows.join('');
         specs.hidden = rows.length === 0;
@@ -636,13 +444,8 @@ const serializedCategories = JSON.stringify(CATEGORIES);
 
       const isBought = boughtIds.has(productId);
       if (toggleBtn) {
-        toggleBtn.textContent = isBought ? '↩ DEVOLVER A PENDIENTES' : '✓ CHULEAR COMPRA';
-        toggleBtn.className = isBought ? 'sheet-outline-btn' : 'sheet-cta-btn';
-      }
-
-      const isCustom = customItems.some((c) => c.id === productId);
-      if (deleteCustomBtn) {
-        deleteCustomBtn.hidden = !isCustom;
+        toggleBtn.textContent = isBought ? 'Devolver a pendientes' : 'Marcar como comprado';
+        toggleBtn.className = isBought ? 'secondary-action-btn' : 'primary-action-btn';
       }
 
       modal.hidden = false;
@@ -662,7 +465,6 @@ const serializedCategories = JSON.stringify(CATEGORIES);
       document.addEventListener('click', (e) => {
         const target = e.target as HTMLElement;
 
-        // 1. Categoría
         const catBtn = target.closest('[data-category]') as HTMLElement | null;
         if (catBtn) {
           currentCategory = catBtn.getAttribute('data-category') || 'Todos';
@@ -670,17 +472,16 @@ const serializedCategories = JSON.stringify(CATEGORIES);
           return;
         }
 
-        // 2. Botón rápido de chulear en la esquina de la foto
         const toggleBtn = target.closest('[data-toggle-id]') as HTMLElement | null;
         if (toggleBtn) {
           e.stopPropagation();
           const id = toggleBtn.getAttribute('data-toggle-id');
           if (id) {
-            const card = toggleBtn.closest('.lookbook-item') as HTMLElement | null;
+            const card = toggleBtn.closest('.item-card') as HTMLElement | null;
             toggleBtn.classList.add('checked');
             if (card) {
-              card.classList.add('checking-out');
-              window.setTimeout(() => toggleProductBought(id), 200);
+              card.classList.add('fading-out');
+              window.setTimeout(() => toggleProductBought(id), 180);
             } else {
               toggleProductBought(id);
             }
@@ -688,7 +489,6 @@ const serializedCategories = JSON.stringify(CATEGORIES);
           return;
         }
 
-        // 3. Abrir hoja de detalle al tocar foto o texto
         const detailTrigger = target.closest('[data-open-detail]') as HTMLElement | null;
         if (detailTrigger) {
           const id = detailTrigger.getAttribute('data-open-detail');
@@ -697,56 +497,34 @@ const serializedCategories = JSON.stringify(CATEGORIES);
         }
       });
 
-      // Dock inferior: Pendientes vs Listos
-      document.getElementById('dock-tab-pending')?.addEventListener('click', () => {
+      document.getElementById('tab-pending')?.addEventListener('click', () => {
         currentStatusTab = 'pending';
         renderApp();
       });
 
-      document.getElementById('dock-tab-bought')?.addEventListener('click', () => {
+      document.getElementById('tab-bought')?.addEventListener('click', () => {
         currentStatusTab = 'bought';
         renderApp();
       });
 
-      // Buscador desplegable
-      const searchDrawer = document.getElementById('search-drawer');
       const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
+      const clearBtn = document.getElementById('clear-search-btn');
 
-      document.getElementById('top-search-trigger')?.addEventListener('click', () => {
-        isSearchOpen = !isSearchOpen;
-        if (searchDrawer) searchDrawer.hidden = !isSearchOpen;
-        if (isSearchOpen && searchInput) {
-          searchInput.focus();
-        } else if (!isSearchOpen && searchInput) {
+      searchInput?.addEventListener('input', () => {
+        searchQuery = searchInput.value;
+        if (clearBtn) clearBtn.hidden = !searchQuery.length;
+        renderApp();
+      });
+
+      clearBtn?.addEventListener('click', () => {
+        if (searchInput) {
           searchInput.value = '';
           searchQuery = '';
+          clearBtn.hidden = true;
           renderApp();
         }
       });
 
-      searchInput?.addEventListener('input', () => {
-        searchQuery = searchInput.value;
-        renderApp();
-      });
-
-      document.getElementById('clear-search-btn')?.addEventListener('click', () => {
-        isSearchOpen = false;
-        if (searchDrawer) searchDrawer.hidden = true;
-        if (searchInput) searchInput.value = '';
-        searchQuery = '';
-        renderApp();
-      });
-
-      // Cambiar columnas 2x / 1x
-      document.getElementById('grid-toggle-btn')?.addEventListener('click', () => {
-        gridCols = gridCols === 2 ? 1 : 2;
-        try {
-          localStorage.setItem(STORAGE_KEY_GRID_COLS, String(gridCols));
-        } catch {}
-        renderApp();
-      });
-
-      // Toast Deshacer
       document.getElementById('toast-undo-btn')?.addEventListener('click', () => {
         if (lastCheckedId) {
           boughtIds.delete(lastCheckedId);
@@ -757,18 +535,15 @@ const serializedCategories = JSON.stringify(CATEGORIES);
         }
       });
 
-      // Reset filtros en vista vacía
       document.getElementById('empty-reset-filters-btn')?.addEventListener('click', () => {
         currentStatusTab = 'pending';
         currentCategory = 'Todos';
         searchQuery = '';
         if (searchInput) searchInput.value = '';
-        if (searchDrawer) searchDrawer.hidden = true;
-        isSearchOpen = false;
+        if (clearBtn) clearBtn.hidden = true;
         renderApp();
       });
 
-      // Restaurar todos los comprados
       document.getElementById('reset-bought-btn')?.addEventListener('click', () => {
         boughtIds.clear();
         saveBoughtState();
@@ -776,7 +551,6 @@ const serializedCategories = JSON.stringify(CATEGORIES);
         renderApp();
       });
 
-      // Cerrar hoja de detalle
       document.getElementById('close-detail-modal')?.addEventListener('click', closeDetailModal);
       document.getElementById('close-detail-handle')?.addEventListener('click', closeDetailModal);
       document.getElementById('detail-modal')?.addEventListener('click', (e) => {
@@ -790,72 +564,6 @@ const serializedCategories = JSON.stringify(CATEGORIES);
           toggleProductBought(id);
         }
       });
-
-      document.getElementById('modal-delete-custom-btn')?.addEventListener('click', () => {
-        if (activeModalProductId) {
-          customItems = customItems.filter((item) => item.id !== activeModalProductId);
-          boughtIds.delete(activeModalProductId);
-          saveCustomItems();
-          saveBoughtState();
-          closeDetailModal();
-          renderApp();
-        }
-      });
-
-      // Modal Agregar Rápido
-      const quickAddModal = document.getElementById('quick-add-modal');
-      const quickAddForm = document.getElementById('quick-add-form') as HTMLFormElement | null;
-
-      document.getElementById('open-quick-add-btn')?.addEventListener('click', () => {
-        if (quickAddModal) {
-          quickAddModal.hidden = false;
-          quickAddModal.setAttribute('aria-hidden', 'false');
-        }
-      });
-
-      const closeQuickAdd = () => {
-        if (quickAddModal) {
-          quickAddModal.hidden = true;
-          quickAddModal.setAttribute('aria-hidden', 'true');
-        }
-      };
-
-      document.getElementById('close-quick-add-modal')?.addEventListener('click', closeQuickAdd);
-      quickAddModal?.addEventListener('click', (e) => {
-        if (e.target === e.currentTarget) closeQuickAdd();
-      });
-
-      quickAddForm?.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const formData = new FormData(quickAddForm);
-        const name = String(formData.get('name') || '').trim();
-        if (!name) return;
-
-        const priceRaw = Number(formData.get('estimatedPrice') || 0);
-        const category = String(formData.get('category') || 'Zapatos');
-        const newItem: ProductItem = {
-          id: 'custom-' + Date.now(),
-          name,
-          category,
-          estimatedPrice: priceRaw > 0 ? priceRaw : undefined,
-          spec: String(formData.get('spec') || '').trim() || undefined,
-          colorway: String(formData.get('colorway') || '').trim() || undefined,
-          storeHint: String(formData.get('storeHint') || '').trim() || undefined,
-          image:
-            String(formData.get('image') || '').trim() ||
-            'https://images.unsplash.com/photo-1539185441755-769473a23570?auto=format&fit=crop&w=900&q=80',
-          notes: String(formData.get('notes') || '').trim() || undefined,
-          priority: 'alta',
-        };
-
-        customItems.unshift(newItem);
-        saveCustomItems();
-        quickAddForm.reset();
-        closeQuickAdd();
-        currentStatusTab = 'pending';
-        currentCategory = 'Todos';
-        renderApp();
-      });
     }
 
     loadPersistedState();
@@ -865,522 +573,371 @@ const serializedCategories = JSON.stringify(CATEGORIES);
 </Layout>
 
 <style is:global>
-  /* BASE LOOKBOOK */
-  .lookbook-app {
+  .minimal-page {
     min-height: 100dvh;
-    background-color: var(--canvas);
-    color: var(--ink);
-    padding-bottom: 110px; /* Espacio para el dock flotante inferior */
+    background-color: var(--bg);
+    color: var(--text);
+    padding-bottom: 64px;
   }
 
-  /* CABECERA EDITORIAL (New Balance × SSENSE) */
-  .editorial-header {
+  /* CABECERA MINIMALISTA */
+  .top-bar {
     position: sticky;
     top: 0;
     z-index: 30;
-    background-color: rgba(255, 255, 255, 0.96);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--hairline);
-    padding: 14px 16px 0;
+    background-color: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
   }
 
-  .header-meta-row {
-    max-width: 1320px;
-    margin: 0 auto 4px;
+  .top-bar-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 16px 16px 12px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    color: var(--ink-muted);
-  }
-
-  .header-title-row {
-    max-width: 1320px;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-bottom: 10px;
-  }
-
-  .editorial-title {
-    font-size: 32px;
-    font-weight: 700;
-    line-height: 1.05;
-    letter-spacing: -0.03em;
-    color: var(--ink);
-  }
-
-  @media (min-width: 768px) {
-    .editorial-title {
-      font-size: 44px;
-    }
-  }
-
-  .minimal-icon-btn {
-    width: 40px;
-    height: 40px;
-    border: none;
-    background: transparent;
-    color: var(--ink);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  /* BUSCADOR EDITORIAL DESPLEGABLE */
-  .search-drawer {
-    max-width: 1320px;
-    margin: 0 auto;
-    padding: 8px 0 12px;
-    border-top: 1px solid var(--hairline);
-  }
-
-  .search-line {
-    display: flex;
-    align-items: center;
     gap: 12px;
   }
 
-  .editorial-search-input {
-    flex: 1;
-    height: 38px;
+  .title-group {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .page-title {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+
+  .subtle-count {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-soft);
+  }
+
+  /* SWITCH DISCRETO PENDIENTES / LISTOS */
+  .segmented-switch {
+    display: inline-flex;
+    background-color: var(--surface);
+    padding: 3px;
+    border-radius: 999px;
+  }
+
+  .seg-btn {
+    height: 30px;
+    padding: 0 12px;
     border: none;
     background: transparent;
-    font-size: 15px;
-    font-weight: 400;
-    color: var(--ink);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s ease;
   }
 
-  .editorial-search-input:focus {
-    outline: none;
+  .seg-btn.active {
+    background-color: var(--bg);
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   }
 
-  .editorial-search-input::placeholder {
-    color: var(--ink-light);
-  }
-
-  .search-close-btn {
-    background: none;
-    border: none;
+  .bought-num {
     font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: var(--ink-muted);
-    padding: 6px 4px;
+    color: var(--text-muted);
   }
 
-  /* NAVEGACIÓN TIPOGRÁFICA CON SUPERÍNDICES (Cero cajas grises) */
-  .editorial-nav {
-    max-width: 1320px;
+  /* BUSCADOR Y PASTILLAS DE CATEGORÍA */
+  .filter-bar {
+    max-width: 960px;
     margin: 0 auto;
+    padding: 0 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .search-box {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 22px;
+  }
+
+  .search-svg {
+    position: absolute;
+    left: 12px;
+    color: var(--text-soft);
+    pointer-events: none;
+  }
+
+  .minimal-search {
+    width: 100%;
+    height: 38px;
+    padding: 0 34px 0 34px;
+    background-color: var(--surface);
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font-size: 14px;
+    color: var(--text);
+    transition: all 0.15s ease;
+  }
+
+  .minimal-search:focus {
+    outline: none;
+    background-color: var(--bg);
+    border-color: #d4d4d4;
+  }
+
+  .minimal-search::placeholder {
+    color: var(--text-soft);
+  }
+
+  .clear-btn {
+    position: absolute;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .pills-nav {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     overflow-x: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    border-top: 1px solid var(--hairline);
   }
 
-  .editorial-nav::-webkit-scrollbar {
+  .pills-nav::-webkit-scrollbar {
     display: none;
   }
 
-  .editorial-cat-link {
-    position: relative;
-    height: 42px;
-    background: none;
-    border: none;
-    padding: 0;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: var(--ink-light);
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
+  .cat-pill {
+    height: 32px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background-color: var(--bg);
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 500;
     white-space: nowrap;
     flex-shrink: 0;
-    transition: color 0.15s ease;
+    transition: all 0.15s ease;
   }
 
-  .editorial-cat-link.active {
-    color: var(--ink);
+  .cat-pill.active {
+    background-color: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
   }
 
-  .editorial-cat-link.active::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background-color: var(--ink);
-  }
-
-  .cat-sup {
-    font-size: 9px;
-    font-weight: 700;
-    transform: translateY(-4px);
-    opacity: 0.8;
-  }
-
-  /* CONTENEDOR DE LA GALERÍA */
-  .lookbook-main {
-    max-width: 1320px;
+  /* ÁREA DE CONTENIDO */
+  .content-area {
+    max-width: 960px;
     margin: 0 auto;
-    padding: 20px 16px 40px;
+    padding: 20px 16px;
   }
 
-  .bought-banner-actions {
+  .bought-header-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    padding: 10px 12px;
-    margin-bottom: 20px;
-    background-color: var(--surface-1);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.05em;
+    padding-bottom: 16px;
+    font-size: 13px;
+    color: var(--text-muted);
   }
 
-  .text-underline-btn {
+  .text-btn {
     background: none;
     border: none;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    color: var(--ink);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
     text-decoration: underline;
-    white-space: nowrap;
   }
 
-  /* CUADRÍCULA LOOKBOOK (Sin bordes de caja, puro espacio negativo) */
-  .lookbook-grid {
+  /* CUADRÍCULA MINIMALISTA */
+  .minimal-grid {
     display: grid;
-  }
-
-  .lookbook-grid.cols-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 12px;
-    row-gap: 28px;
+    column-gap: 14px;
+    row-gap: 26px;
   }
 
-  .lookbook-grid.cols-1 {
-    grid-template-columns: 1fr;
-    row-gap: 36px;
-  }
-
-  @media (min-width: 768px) {
-    .lookbook-grid.cols-2,
-    .lookbook-grid.cols-1 {
+  @media (min-width: 680px) {
+    .minimal-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
       column-gap: 20px;
-      row-gap: 36px;
+      row-gap: 32px;
     }
   }
 
-  @media (min-width: 1100px) {
-    .lookbook-grid.cols-2,
-    .lookbook-grid.cols-1 {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      column-gap: 20px;
-      row-gap: 40px;
-    }
-  }
-
-  /* ITEM INDIVIDUAL DEL LOOKBOOK */
-  .lookbook-item {
+  .item-card {
     display: flex;
     flex-direction: column;
     transition: opacity 0.2s ease, transform 0.2s ease;
   }
 
-  .lookbook-item.checking-out {
+  .item-card.fading-out {
     opacity: 0;
-    transform: translateY(-8px) scale(0.97);
+    transform: scale(0.96);
   }
 
-  /* CONTENEDOR DE FOTO (Vertical 4:5 editorial sobre gris #f5f5f5) */
-  .lookbook-media {
+  .item-photo-wrap {
     position: relative;
     width: 100%;
-    aspect-ratio: 4 / 5;
-    background-color: var(--surface-1);
+    aspect-ratio: 1 / 1;
+    background-color: var(--surface);
+    border-radius: 12px;
     overflow: hidden;
     cursor: pointer;
     margin-bottom: 10px;
   }
 
-  .lookbook-grid.cols-1 .lookbook-media {
-    aspect-ratio: 1 / 1;
-  }
-
-  .lookbook-img {
+  .item-photo {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform 0.3s ease;
   }
 
-  .lookbook-media:hover .lookbook-img {
-    transform: scale(1.03);
+  .item-photo-wrap:hover .item-photo {
+    transform: scale(1.02);
   }
 
-  .item-index-tag {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: var(--ink);
-    background-color: rgba(255, 255, 255, 0.85);
-    padding: 2px 6px;
-  }
-
-  .item-priority-dot {
-    position: absolute;
-    bottom: 10px;
-    left: 10px;
-    width: 8px;
-    height: 8px;
-    background-color: var(--promo-yellow);
-    box-shadow: 0 0 0 2px var(--ink);
-  }
-
-  /* BOTÓN FLOTANTE MINIMALISTA DE CHULEAR EN LA ESQUINA DE LA FOTO */
-  .quick-check-trigger {
+  /* BOTÓN CIRCULAR LIMPIO PARA CHULEAR */
+  .check-circle {
     position: absolute;
     top: 8px;
     right: 8px;
-    width: 36px;
-    height: 36px;
-    background-color: rgba(255, 255, 255, 0.92);
-    color: var(--ink);
-    border: 1px solid rgba(35, 31, 32, 0.14);
-    border-radius: var(--radius-xs);
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    color: var(--text);
+    border: 1px solid rgba(0, 0, 0, 0.06);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.15s ease, color 0.15s ease, transform 0.12s ease;
+    transition: all 0.15s ease;
   }
 
-  .quick-check-trigger:active {
+  .check-circle:active {
     transform: scale(0.9);
   }
 
-  .quick-check-trigger.checked {
-    background-color: var(--ink);
-    color: var(--canvas);
-    border-color: var(--ink);
+  .check-circle.checked {
+    background-color: var(--check-green);
+    color: #ffffff;
+    border-color: var(--check-green);
   }
 
-  /* TEXTOS EDITORIALES DEBAJO DE LA FOTO (Limpios, sin bordes) */
-  .lookbook-caption {
+  /* TEXTO DE LA TARJETA */
+  .item-info {
     cursor: pointer;
     display: flex;
     flex-direction: column;
     gap: 2px;
+    padding: 0 2px;
   }
 
-  .caption-overline {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.07em;
-    color: var(--ink-muted);
-  }
-
-  .caption-title {
+  .item-name {
     font-size: 14px;
-    font-weight: 700;
-    line-height: 1.25;
-    color: var(--ink);
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--text);
   }
 
-  .lookbook-grid.cols-1 .caption-title {
-    font-size: 17px;
-  }
-
-  .caption-sub {
+  .item-meta {
     font-size: 12px;
-    font-weight: 400;
-    color: var(--ink-muted);
-    margin-top: 1px;
+    color: var(--text-muted);
   }
 
-  /* DOCK FLOTANTE INFERIOR (Al alcance del pulgar en la calle) */
-  .bottom-dock-wrap {
+  .item-price {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 2px;
+  }
+
+  /* ESTADO VACÍO */
+  .minimal-empty {
+    padding: 64px 16px;
+    text-align: center;
+  }
+
+  .empty-title {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+
+  .empty-sub {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+  }
+
+  .pill-outline-btn {
+    height: 38px;
+    padding: 0 20px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background-color: var(--bg);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  /* TOAST DE DESHACER */
+  .minimal-toast {
     position: fixed;
-    bottom: 20px;
+    bottom: 24px;
     left: 16px;
     right: 16px;
-    z-index: 50;
-    display: flex;
-    justify-content: center;
-    pointer-events: none;
-  }
-
-  .bottom-dock {
-    pointer-events: auto;
-    height: 50px;
-    padding: 5px;
-    background-color: rgba(35, 31, 32, 0.96);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    color: var(--canvas);
-    border-radius: var(--radius-sm);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24);
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  .dock-pill {
-    height: 40px;
-    padding: 0 12px;
-    background: transparent;
-    color: rgba(255, 255, 255, 0.65);
-    border: none;
-    border-radius: var(--radius-xs);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: background-color 0.15s ease, color 0.15s ease;
-  }
-
-  .dock-pill.active {
-    background-color: var(--canvas);
-    color: var(--ink);
-  }
-
-  .dock-count {
-    font-size: 10px;
-    opacity: 0.8;
-  }
-
-  .dock-divider {
-    width: 1px;
-    height: 20px;
-    background-color: rgba(255, 255, 255, 0.18);
-    margin: 0 2px;
-  }
-
-  .dock-icon-btn {
-    width: 40px;
-    height: 40px;
-    background: transparent;
-    color: var(--canvas);
-    border: none;
-    border-radius: var(--radius-xs);
-    font-size: 12px;
-    font-weight: 700;
-  }
-
-  .dock-add-btn {
-    width: 40px;
-    height: 40px;
-    background-color: var(--promo-yellow);
-    color: var(--promo-yellow-ink);
-    border: none;
-    border-radius: var(--radius-xs);
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 1;
-  }
-
-  /* TOAST FLOTANTE SOBRE EL DOCK */
-  .floating-toast {
-    position: fixed;
-    bottom: 80px;
-    left: 16px;
-    right: 16px;
-    max-width: 380px;
+    max-width: 340px;
     margin: 0 auto;
-    background-color: var(--ink);
-    color: var(--canvas);
-    padding: 10px 14px;
-    border-radius: var(--radius-xs);
+    background-color: var(--text);
+    color: var(--bg);
+    padding: 12px 16px;
+    border-radius: 999px;
+    font-size: 13px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
     z-index: 60;
-    font-size: 12px;
-    font-weight: 700;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
   }
 
-  .toast-label {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .toast-undo-action {
+  .toast-undo {
     background: none;
     border: none;
-    color: var(--promo-yellow);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: underline;
     flex-shrink: 0;
   }
 
-  /* ESTADO VACÍO EDITORIAL */
-  .editorial-empty {
-    padding: 72px 16px;
-    text-align: center;
-    max-width: 400px;
-    margin: 0 auto;
-  }
-
-  .empty-index {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    color: var(--ink-light);
-    margin-bottom: 8px;
-  }
-
-  .empty-heading {
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    margin-bottom: 8px;
-  }
-
-  .empty-copy {
-    font-size: 14px;
-    color: var(--ink-muted);
-    margin-bottom: 24px;
-  }
-
-  .editorial-outline-btn {
-    height: 44px;
-    padding: 0 24px;
-    background: transparent;
-    color: var(--ink);
-    border: 1px solid var(--ink);
-    border-radius: var(--radius-sm);
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-  }
-
-  /* BOTTOM SHEETS (HOJAS DESLIZABLES DESDE ABAJO) */
-  .sheet-backdrop {
+  /* MODAL / SHEET DE DETALLE */
+  .backdrop {
     position: fixed;
     inset: 0;
-    background-color: rgba(35, 31, 32, 0.6);
+    background-color: rgba(0, 0, 0, 0.4);
     z-index: 100;
     display: flex;
     align-items: flex-end;
@@ -1388,233 +945,155 @@ const serializedCategories = JSON.stringify(CATEGORIES);
   }
 
   @media (min-width: 640px) {
-    .sheet-backdrop {
+    .backdrop {
       align-items: center;
       padding: 24px;
     }
   }
 
-  .bottom-sheet {
+  .sheet {
     width: 100%;
-    max-width: 500px;
+    max-width: 440px;
     max-height: 90dvh;
-    background-color: var(--canvas);
+    background-color: var(--bg);
+    border-radius: 20px 20px 0 0;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
   }
 
-  .sheet-handle-bar {
-    padding: 10px 0 4px;
+  @media (min-width: 640px) {
+    .sheet {
+      border-radius: 20px;
+    }
+  }
+
+  .sheet-drag {
+    padding: 10px 0 6px;
     display: flex;
     justify-content: center;
     cursor: pointer;
   }
 
-  .sheet-pill-indicator {
+  .sheet-drag span {
     width: 36px;
     height: 4px;
-    background-color: var(--hairline-dark);
+    border-radius: 999px;
+    background-color: #e0e0e0;
   }
 
-  .sheet-top-bar {
-    padding: 6px 20px 12px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px solid var(--hairline);
-  }
-
-  .sheet-cat-label {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    color: var(--ink-muted);
-  }
-
-  .sheet-close-btn {
-    background: none;
-    border: none;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: var(--ink);
-    padding: 4px 0;
-  }
-
-  .sheet-image-stage {
+  .sheet-media {
+    position: relative;
     width: 100%;
     aspect-ratio: 4 / 3;
-    background-color: var(--surface-1);
-    overflow: hidden;
+    background-color: var(--surface);
   }
 
-  .sheet-image-stage img {
+  .sheet-media img {
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
 
-  .sheet-info {
+  .sheet-close-circle {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    border: none;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: var(--text);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sheet-body {
     padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 16px;
   }
 
-  .sheet-header-block {
+  .sheet-head {
     display: flex;
-    align-items: baseline;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 12px;
   }
 
-  .sheet-title {
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 1.2;
-    letter-spacing: -0.02em;
+  .sheet-cat {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+  }
+
+  .sheet-name {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.25;
   }
 
   .sheet-price {
     font-size: 16px;
-    font-weight: 700;
+    font-weight: 600;
     white-space: nowrap;
   }
 
-  .sheet-specs-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    border-top: 1px solid var(--hairline);
-    border-left: 1px solid var(--hairline);
-  }
-
-  .spec-cell {
-    padding: 10px 12px;
-    border-right: 1px solid var(--hairline);
-    border-bottom: 1px solid var(--hairline);
+  .sheet-meta-list {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    border-top: 1px solid var(--border);
   }
 
-  .spec-cell.full {
-    grid-column: 1 / -1;
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
   }
 
-  .spec-k {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: var(--ink-muted);
+  .meta-row span {
+    color: var(--text-muted);
   }
 
-  .spec-v {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--ink);
+  .meta-row strong {
+    font-weight: 500;
   }
 
-  .sheet-notes {
+  .sheet-note-box {
     padding: 12px 14px;
-    background-color: var(--surface-1);
-    font-size: 13px;
+    background-color: var(--surface);
+    border-radius: 10px;
+    font-size: 14px;
+    color: var(--text-muted);
     line-height: 1.45;
   }
 
-  .sheet-notes-label {
-    display: block;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: var(--ink-muted);
-    margin-bottom: 4px;
-  }
-
-  .sheet-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .sheet-cta-btn {
+  .primary-action-btn {
     width: 100%;
-    height: 44px;
-    background-color: var(--ink);
-    color: var(--canvas);
+    height: 46px;
     border: none;
-    border-radius: var(--radius-sm);
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-  }
-
-  .sheet-outline-btn {
-    width: 100%;
-    height: 44px;
-    background-color: var(--canvas);
-    color: var(--ink);
-    border: 1px solid var(--ink);
-    border-radius: var(--radius-sm);
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-  }
-
-  .sheet-delete-btn {
-    width: 100%;
-    height: 36px;
-    background: none;
-    border: none;
-    color: var(--sale-red);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-  }
-
-  /* FORMULARIO EN HOJA INFERIOR */
-  .sheet-form {
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-
-  .editorial-field {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .editorial-field span {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.07em;
-    color: var(--ink-muted);
-  }
-
-  .editorial-field input,
-  .editorial-field select {
-    height: 42px;
-    padding: 0 12px;
-    background-color: var(--surface-1);
-    border: 1px solid transparent;
-    border-radius: var(--radius-xs);
+    border-radius: 12px;
+    background-color: var(--text);
+    color: var(--bg);
     font-size: 14px;
-    color: var(--ink);
+    font-weight: 500;
   }
 
-  .editorial-field input:focus,
-  .editorial-field select:focus {
-    outline: none;
-    background-color: var(--canvas);
-    border-color: var(--ink);
-  }
-
-  .field-grid-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+  .secondary-action-btn {
+    width: 100%;
+    height: 46px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background-color: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 500;
   }
 
   [hidden] {
