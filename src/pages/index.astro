@@ -323,9 +323,11 @@ const serializedCategories = JSON.stringify(CATEGORIES);
           const priceFormatted = formatCOP(product.estimatedPrice);
           const details = [product.spec, product.colorway].filter(Boolean).join(' · ');
 
+          const fitClass = product.imageFit === 'contain' ? 'fit-contain' : '';
+
           return `
             <article class="item-card ${isBought ? 'is-bought' : ''}" data-id="${product.id}">
-              <div class="item-photo-wrap" data-open-detail="${product.id}">
+              <div class="item-photo-wrap ${fitClass}" data-open-detail="${product.id}">
                 <img
                   src="${product.image}"
                   alt="${product.name}"
@@ -413,6 +415,9 @@ const serializedCategories = JSON.stringify(CATEGORIES);
       if (img) {
         img.src = product.image;
         img.alt = product.name;
+        img.style.objectFit = product.imageFit === 'contain' ? 'contain' : 'cover';
+        img.style.padding = product.imageFit === 'contain' ? '12px' : '0';
+        img.style.backgroundColor = product.imageFit === 'contain' ? '#ffffff' : '';
       }
       if (cat) cat.textContent = product.category;
       if (title) title.textContent = product.name;
@@ -798,12 +803,22 @@ const serializedCategories = JSON.stringify(CATEGORIES);
   .item-photo-wrap {
     position: relative;
     width: 100%;
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 4 / 5;
     background-color: var(--surface);
     border-radius: 12px;
+    border: 1px solid var(--border);
     overflow: hidden;
     cursor: pointer;
     margin-bottom: 10px;
+  }
+
+  .item-photo-wrap.fit-contain {
+    background-color: #ffffff;
+    padding: 12px;
+  }
+
+  .item-photo-wrap.fit-contain .item-photo {
+    object-fit: contain;
   }
 
   .item-photo {
