@@ -112,6 +112,7 @@ const serializedCategories = JSON.stringify(CATEGORIES);
             ✕
           </button>
         </div>
+        <div id="modal-thumbs" class="sheet-thumbs" hidden></div>
 
         <div class="sheet-body">
           <div class="sheet-head">
@@ -324,6 +325,7 @@ const serializedCategories = JSON.stringify(CATEGORIES);
           const details = [product.spec, product.colorway].filter(Boolean).join(' · ');
 
           const fitClass = product.imageFit === 'contain' ? 'fit-contain' : '';
+          const galleryCount = product.images && product.images.length > 1 ? product.images.length : 0;
 
           return `
             <article class="item-card ${isBought ? 'is-bought' : ''}" data-id="${product.id}">
@@ -334,6 +336,7 @@ const serializedCategories = JSON.stringify(CATEGORIES);
                   loading="lazy"
                   class="item-photo"
                 />
+                ${galleryCount > 0 ? `<span class="photo-count-pill">${galleryCount} fotos</span>` : ''}
 
                 <button
                   type="button"
@@ -402,6 +405,7 @@ const serializedCategories = JSON.stringify(CATEGORIES);
       activeModalProductId = productId;
       const modal = document.getElementById('detail-modal');
       const img = document.getElementById('modal-image') as HTMLImageElement | null;
+      const thumbsEl = document.getElementById('modal-thumbs');
       const cat = document.getElementById('modal-category');
       const title = document.getElementById('modal-title');
       const price = document.getElementById('modal-price');
@@ -412,12 +416,32 @@ const serializedCategories = JSON.stringify(CATEGORIES);
 
       if (!modal) return;
 
+      const gallery = product.images && product.images.length > 0 ? product.images : [product.image];
+
       if (img) {
-        img.src = product.image;
+        img.src = gallery[0];
         img.alt = product.name;
         img.style.objectFit = product.imageFit === 'contain' ? 'contain' : 'cover';
         img.style.padding = product.imageFit === 'contain' ? '12px' : '0';
         img.style.backgroundColor = product.imageFit === 'contain' ? '#ffffff' : '';
+      }
+
+      if (thumbsEl) {
+        if (gallery.length > 1) {
+          thumbsEl.hidden = false;
+          thumbsEl.innerHTML = gallery
+            .map(
+              (src, idx) => `
+              <button type="button" class="thumb-btn ${idx === 0 ? 'active' : ''}" data-thumb-src="${src}" aria-label="Ver foto ${idx + 1}">
+                <img src="${src}" alt="Miniatura ${idx + 1}" />
+              </button>
+            `
+            )
+            .join('');
+        } else {
+          thumbsEl.hidden = true;
+          thumbsEl.innerHTML = '';
+        }
       }
       if (cat) cat.textContent = product.category;
       if (title) title.textContent = product.name;
@@ -498,6 +522,18 @@ const serializedCategories = JSON.stringify(CATEGORIES);
         if (detailTrigger) {
           const id = detailTrigger.getAttribute('data-open-detail');
           if (id) openDetailModal(id);
+          return;
+        }
+
+        const thumbBtn = target.closest('[data-thumb-src]') as HTMLElement | null;
+        if (thumbBtn) {
+          const src = thumbBtn.getAttribute('data-thumb-src');
+          const img = document.getElementById('modal-image') as HTMLImageElement | null;
+          if (src && img) {
+            img.src = src;
+            document.querySelectorAll('.thumb-btn').forEach((b) => b.classList.remove('active'));
+            thumbBtn.classList.add('active');
+          }
           return;
         }
       });
@@ -821,6 +857,19 @@ const serializedCategories = JSON.stringify(CATEGORIES);
     object-fit: contain;
   }
 
+  .photo-count-pill {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+  }
+
   .item-photo {
     width: 100%;
     height: 100%;
@@ -1008,6 +1057,37 @@ const serializedCategories = JSON.stringify(CATEGORIES);
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+
+  .sheet-thumbs {
+    display: flex;
+    gap: 8px;
+    padding: 12px 20px 0;
+    overflow-x: auto;
+  }
+
+  .thumb-btn {
+    width: 56px;
+    height: 56px;
+    padding: 4px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background-color: #ffffff;
+    overflow: hidden;
+    flex-shrink: 0;
+    opacity: 0.6;
+    transition: all 0.15s ease;
+  }
+
+  .thumb-btn.active {
+    border-color: var(--text);
+    opacity: 1;
+  }
+
+  .thumb-btn img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
 
   .sheet-close-circle {
