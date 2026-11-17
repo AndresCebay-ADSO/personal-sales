@@ -197,6 +197,17 @@ export const PRODUCTS: ProductItem[] = [
     tags: ['perfume', 'locion', 'fragancia', 'armaf', 'club de nuit', 'urban man', 'elixir'],
   },
   {
+    id: 'armaf-arabian-sky',
+    name: 'Armaf Arabian Sky',
+    category: 'Perfumes',
+    image: '/images/armaf-arabian-sky.webp',
+    imageFit: 'contain',
+    spec: '100 ml · Eau de Parfum',
+    colorway: 'Cítrica especiada amaderada / Bergamota, pomelo, pimienta, lavanda y ámbar',
+    notes: 'Frasco azul turquesa con vetas doradas, cinta azul lateral con placa ARMAF y tapa en forma de corona dorada.',
+    tags: ['perfume', 'locion', 'fragancia', 'armaf', 'arabian sky', 'azul', 'corona'],
+  },
+  {
     id: 'ahmed-al-maghribi-kaaf',
     name: 'Ahmed Al Maghribi Kaaf',
     category: 'Perfumes',

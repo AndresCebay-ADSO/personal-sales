@@ -17,7 +17,7 @@ const serializedCategories = JSON.stringify(CATEGORIES);
         </div>
 
         <div class="top-controls">
-          <!-- Selector discreto Pendientes / Comprados -->
+          <!-- Selector discreto Pendientes / Listos / Descartados -->
           <div class="segmented-switch" role="tablist">
             <button
               type="button"
@@ -35,7 +35,16 @@ const serializedCategories = JSON.stringify(CATEGORIES);
               role="tab"
               aria-selected="false"
             >
-              Listos <span id="bought-dot" class="bought-num" hidden>0</span>
+              Listos <span id="bought-dot" class="seg-num" hidden>0</span>
+            </button>
+            <button
+              type="button"
+              id="tab-discarded"
+              class="seg-btn"
+              role="tab"
+              aria-selected="false"
+            >
+              Descartados <span id="discarded-dot" class="seg-num" hidden>0</span>
             </button>
           </div>
         </div>
@@ -68,10 +77,10 @@ const serializedCategories = JSON.stringify(CATEGORIES);
 
     <!-- GALERÍA LIMPIA -->
     <main class="content-area">
-      <div id="bought-header-bar" class="bought-header-bar" hidden>
-        <span>Cosas que ya compraste</span>
-        <button type="button" id="reset-bought-btn" class="text-btn">
-          Desmarcar todo
+      <div id="status-header-bar" class="bought-header-bar" hidden>
+        <span id="status-header-label">Cosas que ya compraste</span>
+        <button type="button" id="reset-status-btn" class="text-btn">
+          Restaurar todo
         </button>
       </div>
 
@@ -86,14 +95,14 @@ const serializedCategories = JSON.stringify(CATEGORIES);
           Todo lo de esta categoría ya fue comprado o aún no hay elementos guardados.
         </p>
         <button type="button" id="empty-reset-filters-btn" class="pill-outline-btn">
-          Ver todo
+          Ver pendientes
         </button>
       </section>
     </main>
 
     <!-- AVISO DISCRETO PARA DESHACER -->
     <div id="undo-toast" class="minimal-toast" hidden role="status">
-      <span id="toast-msg">Marcado como comprado</span>
+      <span id="toast-msg">Actualizado</span>
       <button type="button" id="toast-undo-btn" class="toast-undo">
         Deshacer
       </button>
@@ -107,7 +116,7 @@ const serializedCategories = JSON.stringify(CATEGORIES);
         </div>
 
         <div class="sheet-media">
-          <img id="modal-image" src="" alt="" />
+          <div id="modal-carousel" class="sheet-carousel"></div>
           <button type="button" id="close-detail-modal" class="sheet-close-circle" aria-label="Cerrar">
             ✕
           </button>
@@ -117,7 +126,7 @@ const serializedCategories = JSON.stringify(CATEGORIES);
         <div class="sheet-body">
           <div class="sheet-head">
             <div>
-              <p class="sheet-cat" id="modal-category">Zapatos</p>
+              <p class="sheet-cat" id="modal-category">Perfumes</p>
               <h2 class="sheet-name" id="modal-title">Nombre</h2>
             </div>
             <p class="sheet-price" id="modal-price"></p>
@@ -129,8 +138,18 @@ const serializedCategories = JSON.stringify(CATEGORIES);
             <p id="modal-notes"></p>
           </div>
 
-          <button type="button" id="modal-toggle-btn" class="primary-action-btn">
-            Marcar como comprado
+          <!-- ACCIONES EN EL DETALLE (Opción 1: Limpia afuera, completa adentro) -->
+          <div class="sheet-action-row" id="modal-pending-actions">
+            <button type="button" id="modal-discard-btn" class="discard-action-btn">
+              ✕ Descartar
+            </button>
+            <button type="button" id="modal-buy-btn" class="primary-action-btn">
+              ✓ Comprado
+            </button>
+          </div>
+
+          <button type="button" id="modal-restore-btn" class="secondary-action-btn" hidden>
+            ↩ Devolver a pendientes
           </button>
         </div>
       </div>
@@ -156,12 +175,23 @@ const serializedCategories = JSON.stringify(CATEGORIES);
     }
 
     const STORAGE_KEY_BOUGHT = 'personal_sales_bought_ids_v1';
+    const STORAGE_KEY_DISCARDED = 'personal_sales_discarded_ids_v1';
+
+    type TabStatus = 'pending' | 'bought' | 'discarded';
 
     let boughtIds = new Set<string>();
-    let currentStatusTab: 'pending' | 'bought' = 'pending';
+    let discardedIds = new Set<string>();
+    let currentStatusTab: TabStatus = 'pending';
     let currentCategory = 'Todos';
     let searchQuery = '';
-    let lastCheckedId: string | null = null;
+
+    // Historial de última acción para el botón "Deshacer"
+    let lastAction: {
+      id: string;
+      prevBought: boolean;
+      prevDiscarded: boolean;
+    } | null = null;
+
     let toastTimer: number | null = null;
     let activeModalProductId: string | null = null;
 
@@ -169,14 +199,18 @@ const serializedCategories = JSON.stringify(CATEGORIES);
       try {
         const rawBought = localStorage.getItem(STORAGE_KEY_BOUGHT);
         if (rawBought) boughtIds = new Set(JSON.parse(rawBought));
+
+        const rawDiscarded = localStorage.getItem(STORAGE_KEY_DISCARDED);
+        if (rawDiscarded) discardedIds = new Set(JSON.parse(rawDiscarded));
       } catch (e) {
         console.error(e);
       }
     }
 
-    function saveBoughtState() {
+    function saveState() {
       try {
         localStorage.setItem(STORAGE_KEY_BOUGHT, JSON.stringify([...boughtIds]));
+        localStorage.setItem(STORAGE_KEY_DISCARDED, JSON.stringify([...discardedIds]));
       } catch (e) {
         console.error(e);
       }
@@ -226,35 +260,61 @@ const serializedCategories = JSON.stringify(CATEGORIES);
 
     function renderApp() {
       const allProducts = getAllProducts();
-      const pendingProducts = allProducts.filter((p) => !boughtIds.has(p.id));
+      const pendingProducts = allProducts.filter(
+        (p) => !boughtIds.has(p.id) && !discardedIds.has(p.id)
+      );
       const boughtProducts = allProducts.filter((p) => boughtIds.has(p.id));
+      const discardedProducts = allProducts.filter((p) => discardedIds.has(p.id));
 
-      const basePool = currentStatusTab === 'pending' ? pendingProducts : boughtProducts;
+      const basePool =
+        currentStatusTab === 'pending'
+          ? pendingProducts
+          : currentStatusTab === 'bought'
+          ? boughtProducts
+          : discardedProducts;
 
       // Contador junto al título
       const counterEl = document.getElementById('items-counter');
       if (counterEl) counterEl.textContent = String(basePool.length);
 
-      // Botón "Listos" contador
+      // Contadores en las pestañas Listos y Descartados
       const boughtDotEl = document.getElementById('bought-dot');
       if (boughtDotEl) {
         boughtDotEl.textContent = String(boughtProducts.length);
         boughtDotEl.hidden = boughtProducts.length === 0;
       }
 
-      // Tabs
-      const tabPending = document.getElementById('tab-pending');
-      const tabBought = document.getElementById('tab-bought');
-      tabPending?.classList.toggle('active', currentStatusTab === 'pending');
-      tabBought?.classList.toggle('active', currentStatusTab === 'bought');
-
-      // Barra de comprados
-      const boughtHeaderBar = document.getElementById('bought-header-bar');
-      if (boughtHeaderBar) {
-        boughtHeaderBar.hidden = !(currentStatusTab === 'bought' && boughtProducts.length > 0);
+      const discardedDotEl = document.getElementById('discarded-dot');
+      if (discardedDotEl) {
+        discardedDotEl.textContent = String(discardedProducts.length);
+        discardedDotEl.hidden = discardedProducts.length === 0;
       }
 
-      // Categorías (solo mostramos Todos + categorías que existan o las principales de forma limpia)
+      // Estado activo de los tabs
+      document.getElementById('tab-pending')?.classList.toggle('active', currentStatusTab === 'pending');
+      document.getElementById('tab-bought')?.classList.toggle('active', currentStatusTab === 'bought');
+      document.getElementById('tab-discarded')?.classList.toggle('active', currentStatusTab === 'discarded');
+
+      // Barra superior contextual en Listos o Descartados
+      const statusHeaderBar = document.getElementById('status-header-bar');
+      const statusHeaderLabel = document.getElementById('status-header-label');
+      const resetStatusBtn = document.getElementById('reset-status-btn');
+
+      if (statusHeaderBar && statusHeaderLabel && resetStatusBtn) {
+        if (currentStatusTab === 'bought' && boughtProducts.length > 0) {
+          statusHeaderBar.hidden = false;
+          statusHeaderLabel.textContent = 'Productos que ya compraste';
+          resetStatusBtn.textContent = 'Desmarcar todos';
+        } else if (currentStatusTab === 'discarded' && discardedProducts.length > 0) {
+          statusHeaderBar.hidden = false;
+          statusHeaderLabel.textContent = 'Productos que descartaste al probarlos';
+          resetStatusBtn.textContent = 'Restaurar todos';
+        } else {
+          statusHeaderBar.hidden = true;
+        }
+      }
+
+      // Pastillas de categorías
       const categoryStrip = document.getElementById('category-strip');
       if (categoryStrip) {
         const categories = window.__CATEGORIES__ || [];
@@ -304,11 +364,17 @@ const serializedCategories = JSON.stringify(CATEGORIES);
               ? 'Intenta buscar con otra palabra.'
               : 'No tienes productos pendientes en esta categoría.';
           }
-        } else {
+        } else if (currentStatusTab === 'bought') {
           if (emptyTitle) emptyTitle.textContent = 'Aún no has marcado compras';
           if (emptyDesc) {
             emptyDesc.textContent =
               'Toca el círculo ✓ en cualquier producto cuando ya lo hayas comprado.';
+          }
+        } else {
+          if (emptyTitle) emptyTitle.textContent = 'No tienes productos descartados';
+          if (emptyDesc) {
+            emptyDesc.textContent =
+              'Si pruebas un perfume o zapato en el centro y no te convence, abre su detalle y dale a "Descartar".';
           }
         }
         return;
@@ -317,36 +383,64 @@ const serializedCategories = JSON.stringify(CATEGORIES);
       gridEl.hidden = false;
       emptyEl.hidden = true;
 
-      // Renderizar tarjetas minimalistas
+      // Renderizar tarjetas minimalistas (Solo 1 botón circular limpio afuera)
       gridEl.innerHTML = visibleProducts
         .map((product) => {
           const isBought = boughtIds.has(product.id);
+          const isDiscarded = discardedIds.has(product.id);
           const priceFormatted = formatCOP(product.estimatedPrice);
           const details = [product.spec, product.colorway].filter(Boolean).join(' · ');
-
           const fitClass = product.imageFit === 'contain' ? 'fit-contain' : '';
-          const galleryCount = product.images && product.images.length > 1 ? product.images.length : 0;
+          const gallery =
+            product.images && product.images.length > 0 ? product.images : [product.image];
+          const hasMultiple = gallery.length > 1;
 
-          return `
-            <article class="item-card ${isBought ? 'is-bought' : ''}" data-id="${product.id}">
-              <div class="item-photo-wrap ${fitClass}" data-open-detail="${product.id}">
+          const slidesHtml = gallery
+            .map(
+              (src, idx) => `
+              <div class="item-slide">
                 <img
-                  src="${product.image}"
-                  alt="${product.name}"
+                  src="${src}"
+                  alt="${product.name} - foto ${idx + 1}"
                   loading="lazy"
                   class="item-photo"
                 />
-                ${galleryCount > 0 ? `<span class="photo-count-pill">${galleryCount} fotos</span>` : ''}
+              </div>
+            `
+            )
+            .join('');
+
+          const dotsHtml = hasMultiple
+            ? `<div class="card-dots" aria-hidden="true">${gallery
+                .map((_, i) => `<span class="card-dot ${i === 0 ? 'active' : ''}"></span>`)
+                .join('')}</div>`
+            : '';
+
+          const circleClass = isBought
+            ? 'checked'
+            : isDiscarded
+            ? 'discarded-badge'
+            : '';
+
+          const circleIcon = isDiscarded
+            ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`
+            : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+
+          return `
+            <article class="item-card ${isBought ? 'is-bought' : ''} ${isDiscarded ? 'is-discarded' : ''}" data-id="${product.id}">
+              <div class="item-photo-wrap ${fitClass}" data-open-detail="${product.id}">
+                <div class="item-carousel" data-card-carousel>
+                  ${slidesHtml}
+                </div>
+                ${dotsHtml}
 
                 <button
                   type="button"
-                  class="check-circle ${isBought ? 'checked' : ''}"
+                  class="check-circle ${circleClass}"
                   data-toggle-id="${product.id}"
-                  aria-label="${isBought ? 'Desmarcar' : 'Marcar como comprado'}"
+                  aria-label="${isBought || isDiscarded ? 'Devolver a pendientes' : 'Marcar como comprado'}"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
+                  ${circleIcon}
                 </button>
               </div>
 
@@ -361,20 +455,30 @@ const serializedCategories = JSON.stringify(CATEGORIES);
         .join('');
     }
 
-    function toggleProductBought(productId: string) {
+    function setProductState(productId: string, targetState: 'pending' | 'bought' | 'discarded') {
       const product = getAllProducts().find((p) => p.id === productId);
       if (!product) return;
 
-      if (boughtIds.has(productId)) {
-        boughtIds.delete(productId);
-        hideToast();
-      } else {
+      lastAction = {
+        id: productId,
+        prevBought: boughtIds.has(productId),
+        prevDiscarded: discardedIds.has(productId),
+      };
+
+      boughtIds.delete(productId);
+      discardedIds.delete(productId);
+
+      if (targetState === 'bought') {
         boughtIds.add(productId);
-        lastCheckedId = productId;
-        showUndoToast(`Listo: ${product.name}`);
+        showUndoToast(`Comprado: ${product.name}`);
+      } else if (targetState === 'discarded') {
+        discardedIds.add(productId);
+        showUndoToast(`Descartado: ${product.name}`);
+      } else {
+        hideToast();
       }
 
-      saveBoughtState();
+      saveState();
       renderApp();
     }
 
@@ -404,7 +508,7 @@ const serializedCategories = JSON.stringify(CATEGORIES);
 
       activeModalProductId = productId;
       const modal = document.getElementById('detail-modal');
-      const img = document.getElementById('modal-image') as HTMLImageElement | null;
+      const carouselEl = document.getElementById('modal-carousel');
       const thumbsEl = document.getElementById('modal-thumbs');
       const cat = document.getElementById('modal-category');
       const title = document.getElementById('modal-title');
@@ -412,18 +516,26 @@ const serializedCategories = JSON.stringify(CATEGORIES);
       const specs = document.getElementById('modal-specs');
       const notesBox = document.getElementById('modal-notes-box');
       const notes = document.getElementById('modal-notes');
-      const toggleBtn = document.getElementById('modal-toggle-btn');
+      const pendingActions = document.getElementById('modal-pending-actions');
+      const restoreBtn = document.getElementById('modal-restore-btn');
 
       if (!modal) return;
 
-      const gallery = product.images && product.images.length > 0 ? product.images : [product.image];
+      const gallery =
+        product.images && product.images.length > 0 ? product.images : [product.image];
+      const isContain = product.imageFit === 'contain';
 
-      if (img) {
-        img.src = gallery[0];
-        img.alt = product.name;
-        img.style.objectFit = product.imageFit === 'contain' ? 'contain' : 'cover';
-        img.style.padding = product.imageFit === 'contain' ? '12px' : '0';
-        img.style.backgroundColor = product.imageFit === 'contain' ? '#ffffff' : '';
+      if (carouselEl) {
+        carouselEl.innerHTML = gallery
+          .map(
+            (src, idx) => `
+            <div class="sheet-slide ${isContain ? 'fit-contain' : ''}">
+              <img src="${src}" alt="${product.name} - foto ${idx + 1}" />
+            </div>
+          `
+          )
+          .join('');
+        carouselEl.scrollLeft = 0;
       }
 
       if (thumbsEl) {
@@ -432,7 +544,7 @@ const serializedCategories = JSON.stringify(CATEGORIES);
           thumbsEl.innerHTML = gallery
             .map(
               (src, idx) => `
-              <button type="button" class="thumb-btn ${idx === 0 ? 'active' : ''}" data-thumb-src="${src}" aria-label="Ver foto ${idx + 1}">
+              <button type="button" class="thumb-btn ${idx === 0 ? 'active' : ''}" data-thumb-idx="${idx}" aria-label="Ver foto ${idx + 1}">
                 <img src="${src}" alt="Miniatura ${idx + 1}" />
               </button>
             `
@@ -443,6 +555,7 @@ const serializedCategories = JSON.stringify(CATEGORIES);
           thumbsEl.innerHTML = '';
         }
       }
+
       if (cat) cat.textContent = product.category;
       if (title) title.textContent = product.name;
       if (price) price.textContent = formatCOP(product.estimatedPrice);
@@ -450,10 +563,10 @@ const serializedCategories = JSON.stringify(CATEGORIES);
       if (specs) {
         const rows = [];
         if (product.spec) {
-          rows.push(`<div class="meta-row"><span>Talla / Medida</span><strong>${product.spec}</strong></div>`);
+          rows.push(`<div class="meta-row"><span>Referencia / Detalle</span><strong>${product.spec}</strong></div>`);
         }
         if (product.colorway) {
-          rows.push(`<div class="meta-row"><span>Color</span><strong>${product.colorway}</strong></div>`);
+          rows.push(`<div class="meta-row"><span>Notas / Color</span><strong>${product.colorway}</strong></div>`);
         }
         if (product.storeHint) {
           rows.push(`<div class="meta-row"><span>Dónde mirar</span><strong>${product.storeHint}</strong></div>`);
@@ -472,9 +585,16 @@ const serializedCategories = JSON.stringify(CATEGORIES);
       }
 
       const isBought = boughtIds.has(productId);
-      if (toggleBtn) {
-        toggleBtn.textContent = isBought ? 'Devolver a pendientes' : 'Marcar como comprado';
-        toggleBtn.className = isBought ? 'secondary-action-btn' : 'primary-action-btn';
+      const isDiscarded = discardedIds.has(productId);
+
+      if (pendingActions && restoreBtn) {
+        if (isBought || isDiscarded) {
+          pendingActions.hidden = true;
+          restoreBtn.hidden = false;
+        } else {
+          pendingActions.hidden = false;
+          restoreBtn.hidden = true;
+        }
       }
 
       modal.hidden = false;
@@ -501,18 +621,21 @@ const serializedCategories = JSON.stringify(CATEGORIES);
           return;
         }
 
+        // Botón circular en la esquina de la foto
         const toggleBtn = target.closest('[data-toggle-id]') as HTMLElement | null;
         if (toggleBtn) {
           e.stopPropagation();
           const id = toggleBtn.getAttribute('data-toggle-id');
           if (id) {
+            const isAlreadyDone = boughtIds.has(id) || discardedIds.has(id);
+            const nextState = isAlreadyDone ? 'pending' : 'bought';
             const card = toggleBtn.closest('.item-card') as HTMLElement | null;
-            toggleBtn.classList.add('checked');
+            if (!isAlreadyDone) toggleBtn.classList.add('checked');
             if (card) {
               card.classList.add('fading-out');
-              window.setTimeout(() => toggleProductBought(id), 180);
+              window.setTimeout(() => setProductState(id, nextState), 180);
             } else {
-              toggleProductBought(id);
+              setProductState(id, nextState);
             }
           }
           return;
@@ -525,18 +648,50 @@ const serializedCategories = JSON.stringify(CATEGORIES);
           return;
         }
 
-        const thumbBtn = target.closest('[data-thumb-src]') as HTMLElement | null;
+        const thumbBtn = target.closest('[data-thumb-idx]') as HTMLElement | null;
         if (thumbBtn) {
-          const src = thumbBtn.getAttribute('data-thumb-src');
-          const img = document.getElementById('modal-image') as HTMLImageElement | null;
-          if (src && img) {
-            img.src = src;
-            document.querySelectorAll('.thumb-btn').forEach((b) => b.classList.remove('active'));
-            thumbBtn.classList.add('active');
+          const idx = Number(thumbBtn.getAttribute('data-thumb-idx') || 0);
+          const carouselEl = document.getElementById('modal-carousel');
+          if (carouselEl) {
+            carouselEl.scrollTo({
+              left: idx * carouselEl.clientWidth,
+              behavior: 'smooth',
+            });
           }
           return;
         }
       });
+
+      // Sincronizar miniaturas cuando el usuario desliza con el dedo en el modal
+      const modalCarousel = document.getElementById('modal-carousel');
+      modalCarousel?.addEventListener(
+        'scroll',
+        () => {
+          if (!modalCarousel.clientWidth) return;
+          const idx = Math.round(modalCarousel.scrollLeft / modalCarousel.clientWidth);
+          document.querySelectorAll('.thumb-btn').forEach((btn, i) => {
+            btn.classList.toggle('active', i === idx);
+          });
+        },
+        { passive: true }
+      );
+
+      // Sincronizar puntitos cuando el usuario desliza una tarjeta en la cuadrícula
+      document.addEventListener(
+        'scroll',
+        (e) => {
+          const target = e.target as HTMLElement;
+          if (target && target.hasAttribute && target.hasAttribute('data-card-carousel')) {
+            if (!target.clientWidth) return;
+            const idx = Math.round(target.scrollLeft / target.clientWidth);
+            const wrap = target.parentElement;
+            wrap?.querySelectorAll('.card-dot').forEach((dot, i) => {
+              dot.classList.toggle('active', i === idx);
+            });
+          }
+        },
+        true
+      );
 
       document.getElementById('tab-pending')?.addEventListener('click', () => {
         currentStatusTab = 'pending';
@@ -545,6 +700,11 @@ const serializedCategories = JSON.stringify(CATEGORIES);
 
       document.getElementById('tab-bought')?.addEventListener('click', () => {
         currentStatusTab = 'bought';
+        renderApp();
+      });
+
+      document.getElementById('tab-discarded')?.addEventListener('click', () => {
+        currentStatusTab = 'discarded';
         renderApp();
       });
 
@@ -567,10 +727,14 @@ const serializedCategories = JSON.stringify(CATEGORIES);
       });
 
       document.getElementById('toast-undo-btn')?.addEventListener('click', () => {
-        if (lastCheckedId) {
-          boughtIds.delete(lastCheckedId);
-          saveBoughtState();
-          lastCheckedId = null;
+        if (lastAction) {
+          const { id, prevBought, prevDiscarded } = lastAction;
+          boughtIds.delete(id);
+          discardedIds.delete(id);
+          if (prevBought) boughtIds.add(id);
+          if (prevDiscarded) discardedIds.add(id);
+          saveState();
+          lastAction = null;
           hideToast();
           renderApp();
         }
@@ -585,9 +749,13 @@ const serializedCategories = JSON.stringify(CATEGORIES);
         renderApp();
       });
 
-      document.getElementById('reset-bought-btn')?.addEventListener('click', () => {
-        boughtIds.clear();
-        saveBoughtState();
+      document.getElementById('reset-status-btn')?.addEventListener('click', () => {
+        if (currentStatusTab === 'bought') {
+          boughtIds.clear();
+        } else if (currentStatusTab === 'discarded') {
+          discardedIds.clear();
+        }
+        saveState();
         currentStatusTab = 'pending';
         renderApp();
       });
@@ -598,11 +766,28 @@ const serializedCategories = JSON.stringify(CATEGORIES);
         if (e.target === e.currentTarget) closeDetailModal();
       });
 
-      document.getElementById('modal-toggle-btn')?.addEventListener('click', () => {
+      // Botones dentro del detalle: Comprado / Descartar / Devolver a pendientes
+      document.getElementById('modal-buy-btn')?.addEventListener('click', () => {
         if (activeModalProductId) {
           const id = activeModalProductId;
           closeDetailModal();
-          toggleProductBought(id);
+          setProductState(id, 'bought');
+        }
+      });
+
+      document.getElementById('modal-discard-btn')?.addEventListener('click', () => {
+        if (activeModalProductId) {
+          const id = activeModalProductId;
+          closeDetailModal();
+          setProductState(id, 'discarded');
+        }
+      });
+
+      document.getElementById('modal-restore-btn')?.addEventListener('click', () => {
+        if (activeModalProductId) {
+          const id = activeModalProductId;
+          closeDetailModal();
+          setProductState(id, 'pending');
         }
       });
     }
@@ -635,21 +820,22 @@ const serializedCategories = JSON.stringify(CATEGORIES);
   .top-bar-inner {
     max-width: 960px;
     margin: 0 auto;
-    padding: 16px 16px 12px;
+    padding: 14px 16px 10px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 8px;
+    flex-wrap: wrap;
   }
 
   .title-group {
     display: flex;
     align-items: baseline;
-    gap: 8px;
+    gap: 7px;
   }
 
   .page-title {
-    font-size: 20px;
+    font-size: 19px;
     font-weight: 600;
     letter-spacing: -0.02em;
     color: var(--text);
@@ -661,7 +847,7 @@ const serializedCategories = JSON.stringify(CATEGORIES);
     color: var(--text-soft);
   }
 
-  /* SWITCH DISCRETO PENDIENTES / LISTOS */
+  /* SWITCH DISCRETO PENDIENTES / LISTOS / DESCARTADOS */
   .segmented-switch {
     display: inline-flex;
     background-color: var(--surface);
@@ -670,8 +856,8 @@ const serializedCategories = JSON.stringify(CATEGORIES);
   }
 
   .seg-btn {
-    height: 30px;
-    padding: 0 12px;
+    height: 29px;
+    padding: 0 10px;
     border: none;
     background: transparent;
     color: var(--text-muted);
@@ -680,8 +866,9 @@ const serializedCategories = JSON.stringify(CATEGORIES);
     border-radius: 999px;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     transition: all 0.15s ease;
+    white-space: nowrap;
   }
 
   .seg-btn.active {
@@ -690,9 +877,9 @@ const serializedCategories = JSON.stringify(CATEGORIES);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   }
 
-  .bought-num {
+  .seg-num {
     font-size: 11px;
-    color: var(--text-muted);
+    color: var(--text-soft);
   }
 
   /* BUSCADOR Y PASTILLAS DE CATEGORÍA */
@@ -836,6 +1023,11 @@ const serializedCategories = JSON.stringify(CATEGORIES);
     transform: scale(0.96);
   }
 
+  .item-card.is-discarded .item-photo {
+    opacity: 0.65;
+    filter: grayscale(35%);
+  }
+
   .item-photo-wrap {
     position: relative;
     width: 100%;
@@ -850,24 +1042,32 @@ const serializedCategories = JSON.stringify(CATEGORIES);
 
   .item-photo-wrap.fit-contain {
     background-color: #ffffff;
+  }
+
+  .item-carousel {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .item-carousel::-webkit-scrollbar {
+    display: none;
+  }
+
+  .item-slide {
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
+    scroll-snap-align: center;
+  }
+
+  .item-photo-wrap.fit-contain .item-slide {
     padding: 12px;
-  }
-
-  .item-photo-wrap.fit-contain .item-photo {
-    object-fit: contain;
-  }
-
-  .photo-count-pill {
-    position: absolute;
-    bottom: 8px;
-    left: 8px;
-    padding: 2px 8px;
-    border-radius: 999px;
-    background-color: rgba(255, 255, 255, 0.9);
-    border: 1px solid var(--border);
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--text-muted);
   }
 
   .item-photo {
@@ -875,6 +1075,36 @@ const serializedCategories = JSON.stringify(CATEGORIES);
     height: 100%;
     object-fit: cover;
     transition: transform 0.3s ease;
+  }
+
+  .item-photo-wrap.fit-contain .item-photo {
+    object-fit: contain;
+  }
+
+  .card-dots {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 5px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, 0.85);
+    pointer-events: none;
+  }
+
+  .card-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 999px;
+    background-color: #d4d4d4;
+    transition: all 0.15s ease;
+  }
+
+  .card-dot.active {
+    background-color: var(--text);
+    width: 12px;
   }
 
   .item-photo-wrap:hover .item-photo {
@@ -910,6 +1140,12 @@ const serializedCategories = JSON.stringify(CATEGORIES);
     border-color: var(--check-green);
   }
 
+  .check-circle.discarded-badge {
+    background-color: var(--surface);
+    color: var(--text-muted);
+    border-color: var(--border);
+  }
+
   /* TEXTO DE LA TARJETA */
   .item-info {
     cursor: pointer;
@@ -929,6 +1165,10 @@ const serializedCategories = JSON.stringify(CATEGORIES);
   .item-meta {
     font-size: 12px;
     color: var(--text-muted);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   .item-price {
@@ -954,6 +1194,9 @@ const serializedCategories = JSON.stringify(CATEGORIES);
     font-size: 14px;
     color: var(--text-muted);
     margin-bottom: 20px;
+    max-width: 340px;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .pill-outline-btn {
@@ -985,6 +1228,12 @@ const serializedCategories = JSON.stringify(CATEGORIES);
     gap: 12px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
     z-index: 60;
+  }
+
+  #toast-msg {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .toast-undo {
@@ -1053,10 +1302,41 @@ const serializedCategories = JSON.stringify(CATEGORIES);
     background-color: var(--surface);
   }
 
-  .sheet-media img {
+  .sheet-carousel {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .sheet-carousel::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sheet-slide {
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
+    scroll-snap-align: center;
+  }
+
+  .sheet-slide.fit-contain {
+    background-color: #ffffff;
+    padding: 12px;
+  }
+
+  .sheet-slide img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+
+  .sheet-slide.fit-contain img {
+    object-fit: contain;
   }
 
   .sheet-thumbs {
@@ -1147,6 +1427,7 @@ const serializedCategories = JSON.stringify(CATEGORIES);
   .meta-row {
     display: flex;
     justify-content: space-between;
+    gap: 12px;
     padding: 10px 0;
     border-bottom: 1px solid var(--border);
     font-size: 14px;
@@ -1154,10 +1435,12 @@ const serializedCategories = JSON.stringify(CATEGORIES);
 
   .meta-row span {
     color: var(--text-muted);
+    flex-shrink: 0;
   }
 
   .meta-row strong {
     font-weight: 500;
+    text-align: right;
   }
 
   .sheet-note-box {
@@ -1167,6 +1450,31 @@ const serializedCategories = JSON.stringify(CATEGORIES);
     font-size: 14px;
     color: var(--text-muted);
     line-height: 1.45;
+  }
+
+  /* BOTONES LADO A LADO EN EL DETALLE: DESCARTAR Y COMPRADO */
+  .sheet-action-row {
+    display: grid;
+    grid-template-columns: 1fr 1.25fr;
+    gap: 10px;
+  }
+
+  .discard-action-btn {
+    width: 100%;
+    height: 46px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background-color: var(--surface);
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+  }
+
+  .discard-action-btn:active {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border-color: #fecaca;
   }
 
   .primary-action-btn {
