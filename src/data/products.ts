@@ -38,6 +38,22 @@ export const CATEGORIES = [
  */
 export const PRODUCTS: ProductItem[] = [
   {
+    id: 'nb-9060-brown-taupe',
+    name: 'New Balance 9060 Café / Taupe',
+    category: 'Zapatos',
+    image: '/images/nb-9060-brown-black-1.jpg',
+    images: [
+      '/images/nb-9060-brown-black-1.jpg',
+      '/images/nb-9060-brown-black-2.jpg',
+      '/images/nb-9060-brown-black-3.webp',
+    ],
+    imageFit: 'contain',
+    spec: 'Modelo 9060 · Mediasuela ABZORB',
+    colorway: 'Café chocolate / Taupe / Suela negra moteada',
+    notes: 'Gamuza café oscuro con malla tono taupe, logo N interno texturizado/bordado y lengüeta con joya NB 9060.',
+    tags: ['zapatos', 'tenis', 'new balance', '9060', 'cafe', 'marron', 'taupe'],
+  },
+  {
     id: 'nb-1906r-silver-black',
     name: 'New Balance 1906R (M1906RER)',
     category: 'Zapatos',
